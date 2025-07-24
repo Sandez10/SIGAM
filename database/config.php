@@ -8,7 +8,7 @@ define('ENVIRONMENT', 'development'); // Cambiar a 'production' en servidor real
 define('DB_HOST', 'localhost');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');
-define('DB_DATABASE', 'sigam');
+define('DB_DATABASE', 'zigam2');
 define('DB_CHARSET', 'utf8mb4');
 
 // Configuración de sesión

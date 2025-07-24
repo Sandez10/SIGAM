@@ -1,0 +1,57 @@
+/* Overlay mejorado */
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(3px);
+}
+
+/* Menú móvil cerrado (fuera de pantalla) */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 999;
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Menú abierto */
+.mobile-menu.active {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Mostrar overlay */
+.menu-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Previene scroll al abrir menú */
+body.menu-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Botón hamburguesa */
+.hamburger.is-active svg {
+  transform: rotate(90deg);
+  transition: transform 0.3s ease;
+}

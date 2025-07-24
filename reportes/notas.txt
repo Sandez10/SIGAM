@@ -1,0 +1,2 @@
+aquí solo van a ir reportes/pdf
+archivos para generar reportes en excel/pdf

@@ -12,8 +12,7 @@ try {
     $db = Database::getInstance();
     $conn = $db->getConnection();
 
-    // Corregido: tabla 'usuarios' (no 'users')
-    $stmt = $conn->prepare("SELECT usr, rol, password_reset_required FROM usuarios WHERE usrId = ?");
+    $stmt = $conn->prepare("SELECT usr, rol, logia, password_reset_required FROM usuarios WHERE usrId = ?");
     $stmt->bind_param("i", $_SESSION['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -26,9 +25,11 @@ try {
         exit;
     }
 
+    // Actualizar datos de sesión
     $_SESSION['user_name'] = $user['usr'];
     $_SESSION['rol'] = $user['rol'];
     $_SESSION['password_reset_required'] = $user['password_reset_required'];
+    $_SESSION['logia'] = $user['logia'];
 
     if ($user['password_reset_required'] == 1) {
         header("Location: reset_password.php");
@@ -36,9 +37,17 @@ try {
     }
 } catch (Exception $e) {
     error_log("Error en principal.php: " . $e->getMessage());
-    header("Location: ../index.php");
+    header("Location: ../");
     exit;
 }
+
+// Definir permisos por rol
+$permisos = [
+    'superadmin' => ['secretaria', 'usuarios', 'tesoreria', 'actas', 'configuracion','reportes'],
+    'administrador' => ['secretaria', 'actas'],
+    'miembro' => ['tesoreria', 'actas']
+];
+$rol_actual = $_SESSION['rol'];
 ?>
 
 <!DOCTYPE html>
@@ -77,7 +86,7 @@ try {
             <?php echo strtoupper(substr($_SESSION['user_name'], 0, 1)); ?>
           </div>
         </div>
-        <a href="logout.php" class="flex items-center space-x-2 bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium shadow hover:shadow-md transition-all">
+        <a href="../sesiones_conexiones/logout.php" class="flex items-center space-x-2 bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium shadow hover:shadow-md transition-all">
           <i data-lucide="log-out" class="w-5 h-5"></i>
           <span>Salir</span>
         </a>
@@ -88,7 +97,8 @@ try {
 
 <!-- Hero Section -->
 <section class="container mx-auto px-6 py-12">
-  <div class="text-center max-w-3xl mx-auto">
+
+<div class="text-center max-w-3xl mx-auto">
     <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
       Hola, <span class="text-indigo-600"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
     </h1>
@@ -109,24 +119,25 @@ try {
   </div>
 </section>
 
-<!-- Features Grid -->
-<section class="container mx-auto px-6 pb-16">
+<!-- Features Grid --><section class="container mx-auto px-6 pb-16">
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-    <!-- Nuevo Registro -->
-    <a href="../formulario/form_tes.php" class="glass-card p-8 text-center group">
-      <div class="feature-icon bg-blue-100 text-blue-600 mx-auto group-hover:bg-blue-600 group-hover:text-white">
-        <i data-lucide="file-plus" class="w-6 h-6"></i>
+    <?php if (in_array('secretaria', $permisos[$rol_actual])): ?>
+    <!-- Secretaría -->
+    <a href="../formulario/form_sec.php" class="glass-card p-8 text-center group">
+      <div class="feature-icon bg-red-100 text-red-600 mx-auto group-hover:bg-red-600 group-hover:text-white">
+        <i data-lucide="clipboard-list" class="w-6 h-6 text-current"></i>
       </div>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">Nuevo Registro</h3>
-      <p class="text-gray-600 mb-4">Registra movimientos de tesorería</p>
-      <div class="text-blue-500 font-medium flex items-center justify-center group-hover:text-blue-600">
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Secretaría</h3>
+      <p class="text-gray-600 mb-4">Registro y control de membresía</p>
+      <div class="text-red-500 font-medium flex items-center justify-center group-hover:text-red-600">
         <span>Acceder</span>
-        <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+        <i data-lucide="arrow-right" class="w-4 h-4 ml-2 text-current"></i>
       </div>
     </a>
+    <?php endif; ?>
 
-    <?php if ($_SESSION['rol'] === 'admin'): ?>
-    <!-- Administrar Usuarios -->
+    <?php if (in_array('usuarios', $permisos[$rol_actual])): ?>
+    <!-- Usuarios -->
     <a href="../usuarios/all_usuarios.php" class="glass-card p-8 text-center group">
       <div class="feature-icon bg-indigo-100 text-indigo-600 mx-auto group-hover:bg-indigo-600 group-hover:text-white">
         <i data-lucide="users" class="w-6 h-6"></i>
@@ -140,31 +151,65 @@ try {
     </a>
     <?php endif; ?>
 
-    <!-- Historial -->
-    <a href="../formulario/reportes/reporte1.php" class="glass-card p-8 text-center group">
-      <div class="feature-icon bg-green-100 text-green-600 mx-auto group-hover:bg-green-600 group-hover:text-white">
-        <i data-lucide="database" class="w-6 h-6"></i>
+    <?php if (in_array('tesoreria', $permisos[$rol_actual])): ?>
+    <!-- Tesorería -->
+    <a href="../formulario/form_tes.php" class="glass-card p-8 text-center group">
+      <div class="feature-icon bg-yellow-100 text-yellow-600 mx-auto group-hover:bg-yellow-600 group-hover:text-white">
+        <i data-lucide="circle-dollar-sign" class="w-6 h-6"></i>
       </div>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">Historial</h3>
-      <p class="text-gray-600 mb-4">Consulta registros anteriores</p>
-      <div class="text-green-500 font-medium flex items-center justify-center group-hover:text-green-600">
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Tesorería</h3>
+      <p class="text-gray-600 mb-4">Registro y Control financiera</p>
+      <div class="text-yellow-500 font-medium flex items-center justify-center group-hover:text-yellow-600">
         <span>Acceder</span>
         <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
       </div>
     </a>
+    <?php endif; ?>
 
-    <!-- Reportes -->
-    <a href="../formulario/reportes/elegir_reporte.php" class="glass-card p-8 text-center group">
+    <?php if (in_array('actas', $permisos[$rol_actual])): ?>
+    <!-- Actas -->
+    <a href="../reportes/subir_reporte.php" class="glass-card p-8 text-center group">
       <div class="feature-icon bg-purple-100 text-purple-600 mx-auto group-hover:bg-purple-600 group-hover:text-white">
-        <i data-lucide="bar-chart-2" class="w-6 h-6"></i>
+        <i data-lucide="file-text" class="w-6 h-6"></i>
       </div>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">Reportes</h3>
-      <p class="text-gray-600 mb-4">Genera PDF o Excel</p>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Actas</h3>
+      <p class="text-gray-600 mb-4">Subir reportes en PDF/Excel</p>
       <div class="text-purple-500 font-medium flex items-center justify-center group-hover:text-purple-600">
         <span>Acceder</span>
         <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
       </div>
     </a>
+    <?php endif; ?>
+
+    <?php if (in_array('reportes', $permisos[$rol_actual])): ?>
+    <!-- Reportes -->
+    <a href="../reportes/ver_reportes.php" class="glass-card p-8 text-center group">
+      <div class="feature-icon bg-purple-100 text-purple-600 mx-auto group-hover:bg-purple-600 group-hover:text-white">
+        <i data-lucide="file-text" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Reportes</h3>
+      <p class="text-gray-600 mb-4">Generar reportes en PDF/Excel</p>
+      <div class="text-purple-500 font-medium flex items-center justify-center group-hover:text-purple-600">
+        <span>Acceder</span>
+        <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+      </div>
+    </a>
+    <?php endif; ?>
+
+    <?php if (in_array('configuracion', $permisos[$rol_actual])): ?>
+    <!-- Configuración (solo para superadmin) -->
+    <a href="../configuracion/en_construccion.php" class="glass-card p-8 text-center group">
+      <div class="feature-icon bg-green-100 text-green-600 mx-auto group-hover:bg-green-600 group-hover:text-white">
+        <i data-lucide="settings" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Configuración</h3>
+      <p class="text-gray-600 mb-4">Ajustes del sistema</p>
+      <div class="text-green-500 font-medium flex items-center justify-center group-hover:text-green-600">
+        <span>Acceder</span>
+        <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+      </div>
+    </a>
+    <?php endif; ?>
   </div>
 </section>
 

@@ -36,7 +36,7 @@
           </button>
         </form>
         <div class="footer-links">
-          © 2025 - SIGAM | Todos los derechos reservados
+          © 2025 - SIGAM
         </div>
       </div>
     </div>
