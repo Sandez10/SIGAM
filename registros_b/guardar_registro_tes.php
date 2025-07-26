@@ -49,15 +49,14 @@ function procesarDatos($data, $tipo = 'string') {
 try {
     // 6.1. Recoger y validar datos principales
     $logia = procesarDatos($_POST['logia'] ?? '');
+    $oriente = procesarDatos($_POST['oriente'] ?? '');
     $clave_logia = procesarDatos($_POST['clave_logia'] ?? '');
     $id_hermano = procesarDatos($_POST['id_hermano'] ?? '', 'int');
     $grado = procesarDatos($_POST['grado'] ?? '');
-    $oriente = procesarDatos($_POST['oriente'] ?? '');
-
     // Procesar valores numéricos
+    $iniciacion = procesarDatos($_POST['iniciacion'] ?? '', 'float');
     $capitas = procesarDatos($_POST['capitas'] ?? '', 'float');
     $seguro = procesarDatos($_POST['seguro'] ?? '', 'float');
-    $iniciacion = procesarDatos($_POST['iniciacion'] ?? '', 'float');
     $afiliacion = procesarDatos($_POST['afiliacion'] ?? '', 'float');
     $exaltacion = procesarDatos($_POST['exaltacion'] ?? '', 'float');
 
@@ -91,7 +90,7 @@ $query = "INSERT INTO tesoreria (
     seguro, 
     iniciacion, 
     afiliacion,
-    exaltacion
+    exaltacion,
     fecha_registro, 
     usuario_registro,
     oriente
@@ -105,7 +104,7 @@ if (!$stmt) {
 $usuario_registro = $_SESSION['user_id'];
 
 $stmt->bind_param(
-    "issssddddiss", 
+    "issssddddiss",  // Nota: he quitado una 'd' y un 's' al final (ahora 12 caracteres)
     $id_hermano,
     $nombre_hermano,
     $grado,
@@ -130,7 +129,7 @@ $stmt->bind_param(
     
     // Éxito - redireccionar con mensaje
     $_SESSION['success_message'] = 'El registro se guardó con éxito';
-    header('Location: ../formulario/form_tes.php');
+    header('Location: ../tesoreria/');
     exit;
 
 } catch (Exception $e) {

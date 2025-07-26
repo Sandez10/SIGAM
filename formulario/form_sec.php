@@ -12,6 +12,8 @@ if($datosLogia === null){
 }
 
 $logia_registro = $datosLogia['logia'];
+$clave_logia = $datosLogia['clave_logia'];
+$oriente = $datosLogia['oriente'];
 
 // Verificar si estamos en modo edición
 $modo_edicion = isset($_GET['editar']) && !empty($_GET['id']);
@@ -41,7 +43,7 @@ if ($modo_edicion) {
         $registro_actual = $result->fetch_assoc();
     } else {
         $_SESSION['error_message'] = 'Registro no encontrado';
-        header('Location: form_sec.php');
+        header('Location: secretaria/');
         exit();
     }
 }
@@ -75,6 +77,15 @@ if (isset($_SESSION['error_message'])) {
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../");
     exit;
+}
+
+// Verificar si el rol es admin
+if ($_SESSION['rol'] !== 'superadmin') {
+    echo "<script>
+        alert('No tienes permiso para acceder a esta página.');
+        history.back();
+    </script>";
+    exit();
 }
 
 // Generar token CSRF
@@ -118,11 +129,13 @@ if (!isset($_SESSION['csrf_token'])) {
 
   <nav>
     <ul class="space-y-2">
-      <li><a href="../plataforma/principal.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-      <li><a href="../usuarios/all_usuarios.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
-      <li><a href="form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
-      <li><a href="../reportes/ver_reportes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
-      <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg bg-[var(--error-color)] text-white mt-4">Cerrar Sesión</a></li>
+      <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
+      <li><a href="../usuarios/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
+      <li><a href="../tesoreria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
+      <li><a href="../actas/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Actas</a></li>
+      <li><a href="../reportes/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
+      <li><a href="../configuracion/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Configuración</a></li>      
+      <li><a href="../salir/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Cerrar Sesión</a></li>      
     </ul>
   </nav>
 </aside>
@@ -156,11 +169,13 @@ if (!isset($_SESSION['csrf_token'])) {
 
     <nav>
       <ul class="space-y-2">
-        <li><a href="../plataforma/principal.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-        <li><a href="../usuarios/all_usuarios.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
-        <li><a href="form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
-        <li><a href="../reportes/ver_reportes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
-        <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg bg-[var(--error-color)] text-white mt-4">Cerrar Sesión</a></li>
+      <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
+      <li><a href="../usuarios/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
+      <li><a href="../tesoreria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
+      <li><a href="../actas/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Actas</a></li>
+      <li><a href="../reportes/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
+      <li><a href="../configuracion/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Configuración</a></li>      
+      <li><a href="../salir/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Cerrar Sesión</a></li>      
       </ul>
     </nav>
   </div>
@@ -219,12 +234,15 @@ if (!isset($_SESSION['csrf_token'])) {
           <?php echo $modo_edicion ? 'Editar Información' : 'Nueva Información'; ?>
         </h3>
         
-        <form action="<?php echo $modo_edicion ? '../registros_b/actualizar_registro.php' : '../registros_b/guardar_registro.php'; ?>" 
+        <form action="<?php echo $modo_edicion ? '../actualizar/' : '../guardar/'; ?>" 
               method="POST" id="tesoreriaForm" class="grid grid-cols-1 gap-8 text-sm" enctype="multipart/form-data" novalidate>
           
           <!-- Campos ocultos -->
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
           <input type="hidden" id="logia" name="logia" value="<?php echo !empty($logia_registro) ? $logia_registro : ''; ?>">
+          <input type="hidden" id="clave_logia" name="clave_logia" value="<?php echo !empty($clave_logia) ? $clave_logia : ''; ?>">
+          <input type="hidden" id="oriente" name="oriente" value="<?php echo !empty($oriente) ? $oriente : ''; ?>">
+
           <?php if ($modo_edicion): ?>
             <input type="hidden" name="id_registro" value="<?php echo $id_registro; ?>">
           <?php endif; ?>
@@ -536,7 +554,7 @@ if (!isset($_SESSION['csrf_token'])) {
     // Funciones para cambiar modo
     function cambiarModo(modo) {
       if (modo === 'nuevo') {
-        window.location.href = 'form_sec.php';
+        window.location.href = '../secretaria/';
       } else {
         document.getElementById('selector-registro').style.display = 'block';
       }
@@ -546,7 +564,7 @@ if (!isset($_SESSION['csrf_token'])) {
       const select = document.getElementById('lista-registros');
       const id = select.value;
       if (id) {
-        window.location.href = `form_sec.php?editar=1&id=${id}`;
+        window.location.href = `?editar=1&id=${id}`;
       }
     }
 

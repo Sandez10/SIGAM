@@ -86,7 +86,7 @@ $rol_actual = $_SESSION['rol'];
             <?php echo strtoupper(substr($_SESSION['user_name'], 0, 1)); ?>
           </div>
         </div>
-        <a href="../sesiones_conexiones/logout.php" class="flex items-center space-x-2 bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium shadow hover:shadow-md transition-all">
+        <a href="../salir/" class="flex items-center space-x-2 bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium shadow hover:shadow-md transition-all">
           <i data-lucide="log-out" class="w-5 h-5"></i>
           <span>Salir</span>
         </a>
@@ -123,7 +123,7 @@ $rol_actual = $_SESSION['rol'];
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
     <?php if (in_array('secretaria', $permisos[$rol_actual])): ?>
     <!-- Secretaría -->
-    <a href="../formulario/form_sec.php" class="glass-card p-8 text-center group">
+    <a href="../secretaria/" class="glass-card p-8 text-center group">
       <div class="feature-icon bg-red-100 text-red-600 mx-auto group-hover:bg-red-600 group-hover:text-white">
         <i data-lucide="clipboard-list" class="w-6 h-6 text-current"></i>
       </div>
@@ -138,7 +138,7 @@ $rol_actual = $_SESSION['rol'];
 
     <?php if (in_array('usuarios', $permisos[$rol_actual])): ?>
     <!-- Usuarios -->
-    <a href="../usuarios/all_usuarios.php" class="glass-card p-8 text-center group">
+    <a href="../usuarios/" class="glass-card p-8 text-center group">
       <div class="feature-icon bg-indigo-100 text-indigo-600 mx-auto group-hover:bg-indigo-600 group-hover:text-white">
         <i data-lucide="users" class="w-6 h-6"></i>
       </div>
@@ -153,7 +153,7 @@ $rol_actual = $_SESSION['rol'];
 
     <?php if (in_array('tesoreria', $permisos[$rol_actual])): ?>
     <!-- Tesorería -->
-    <a href="../formulario/form_tes.php" class="glass-card p-8 text-center group">
+    <a href="../tesoreria/" class="glass-card p-8 text-center group">
       <div class="feature-icon bg-yellow-100 text-yellow-600 mx-auto group-hover:bg-yellow-600 group-hover:text-white">
         <i data-lucide="circle-dollar-sign" class="w-6 h-6"></i>
       </div>
@@ -168,7 +168,7 @@ $rol_actual = $_SESSION['rol'];
 
     <?php if (in_array('actas', $permisos[$rol_actual])): ?>
     <!-- Actas -->
-    <a href="../reportes/subir_reporte.php" class="glass-card p-8 text-center group">
+    <a href="../actas/" class="glass-card p-8 text-center group">
       <div class="feature-icon bg-purple-100 text-purple-600 mx-auto group-hover:bg-purple-600 group-hover:text-white">
         <i data-lucide="file-text" class="w-6 h-6"></i>
       </div>
@@ -183,7 +183,7 @@ $rol_actual = $_SESSION['rol'];
 
     <?php if (in_array('reportes', $permisos[$rol_actual])): ?>
     <!-- Reportes -->
-    <a href="../reportes/ver_reportes.php" class="glass-card p-8 text-center group">
+    <a href="../reportes/" class="glass-card p-8 text-center group">
       <div class="feature-icon bg-purple-100 text-purple-600 mx-auto group-hover:bg-purple-600 group-hover:text-white">
         <i data-lucide="file-text" class="w-6 h-6"></i>
       </div>
@@ -198,7 +198,7 @@ $rol_actual = $_SESSION['rol'];
 
     <?php if (in_array('configuracion', $permisos[$rol_actual])): ?>
     <!-- Configuración (solo para superadmin) -->
-    <a href="../configuracion/en_construccion.php" class="glass-card p-8 text-center group">
+    <a href="../configuracion/" class="glass-card p-8 text-center group">
       <div class="feature-icon bg-green-100 text-green-600 mx-auto group-hover:bg-green-600 group-hover:text-white">
         <i data-lucide="settings" class="w-6 h-6"></i>
       </div>

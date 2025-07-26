@@ -21,7 +21,7 @@
         <p>Sistema Integral de Gestión Administrativo</p>
       </div>
       <div class="login-body">
-        <form id="loginForm" action="sesiones_conexiones/validar_sesion.php" method="POST" autocomplete="off">
+<form id="loginForm" action="login" method="POST" autocomplete="off">
           <div class="mb-4">
             <label for="usuario" class="form-label">Usuario</label>
             <input type="text" name="usuario" id="usuario" class="form-control" placeholder="Ingresa tu usuario" required autofocus />
@@ -44,7 +44,7 @@
 
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Toggle password visibility
@@ -63,6 +63,77 @@
         icon.classList.add('bi-eye-fill');
       }
     });
+
+
+
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const button = document.getElementById('loginButton');
+    const buttonText = document.getElementById('buttonText');
+    
+    // Mostrar estado de carga
+    button.disabled = true;
+    buttonText.textContent = 'Verificando...';
+    
+    // Enviar datos via AJAX
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito antes de redirigir
+            Swal.fire({
+                title: '¡Bienvenido!',
+                text: 'Redirigiendo...',
+                icon: 'success',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                window.location.href = data.redirect;
+            });
+        } else {
+            // Mostrar error con SweetAlert
+            Swal.fire({
+                title: 'Error',
+                text: data.message,
+                icon: 'error',
+                confirmButtonText: 'Entendido'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al comunicarse con el servidor',
+            icon: 'error',
+            confirmButtonText: 'Entendido'
+        });
+    })
+    .finally(() => {
+        // Restaurar estado del botón
+        button.disabled = false;
+        buttonText.textContent = 'Acceder al sistema';
+    });
+});
+
+// Manejar mensajes de error en URL (para compatibilidad con versiones anteriores)
+const urlParams = new URLSearchParams(window.location.search);
+const errorMessage = urlParams.get('error');
+if (errorMessage) {
+    Swal.fire({
+        title: 'Error',
+        text: errorMessage,
+        icon: 'error',
+        confirmButtonText: 'Entendido'
+    });
+    
+    // Limpiar el parámetro de la URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+}
     
   </script>
 </body>

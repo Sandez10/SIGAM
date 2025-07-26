@@ -10,7 +10,7 @@ function sanitizeInput($data) {
 // 1. Verificar método de envío
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $_SESSION['error_message'] = 'Método no permitido';
-    header('Location: ../formulario/form_sec.php');
+    header('Location: ../secretaria/');
     exit();
 }
 
@@ -23,7 +23,7 @@ if (!isset($_POST['csrf_token']) ||
     error_log("Intento de CSRF detectado. Token esperado: ".$_SESSION['csrf_token'].", Token recibido: ".($_POST['csrf_token'] ?? ''));
     
     $_SESSION['error_message'] = 'Token de seguridad inválido o expirado. Por favor recarga el formulario.';
-    header('Location: ../formulario/form_sec.php');
+    header('Location: ../secretaria/');
     exit();
 }
 
@@ -61,7 +61,7 @@ if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
 
 if (!empty($errors)) {
     $_SESSION['error_message'] = implode('\n', $errors);
-    header('Location: ../formulario/form_sec.php');
+    header('Location: ../secretaria/');
     exit();
 }
 
@@ -78,6 +78,8 @@ try {
 
     // Sanitizar inputs
     $logia = isset($_POST['logia']) ? sanitizeInput($_POST['logia']) : null;
+    $clave_logia = isset($_POST['clave_logia']) ? sanitizeInput($_POST['clave_logia']) : null;
+    $oriente = isset($_POST['oriente']) ? sanitizeInput($_POST['oriente']) : null;
     if (empty($logia)) {
         $errors[] = "El campo logia es requerido";
     }
@@ -96,12 +98,12 @@ try {
     $stmt = $conn->prepare("INSERT INTO registros (
         nombre_completo, domicilio, nacionalidad, estado_civil,
         ocupacion, religion, numero_contacto, numero_emergencia,
-        correo_electronico, fotografia, logia,estado_hermano
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)");
+        correo_electronico, fotografia, logia, clave_logia, oriente, estado_hermano
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     $null = NULL;
     $stmt->bind_param(
-        "sssssssssbsi",
+        "sssssssssbsssi",
         $nombre_completo,
         $domicilio,
         $nacionalidad,
@@ -113,6 +115,8 @@ try {
         $correo_electronico,
         $null,
         $logia,
+        $clave_logia,
+        $oriente,
         $estado_hermano
     );
 
@@ -207,7 +211,7 @@ try {
 
     // Éxito - redireccionar con mensaje
     $_SESSION['success_message'] = 'El registro se guardó con éxito';
-    header('Location: ../formulario/form_sec.php');
+    header('Location: ../secretaria/');
     exit();
 
 } catch (Exception $e) {
@@ -220,7 +224,7 @@ try {
     
     $_SESSION['error_message'] = 'Ocurrió un error. Por favor intenta nuevamente.';
     error_log("Error en guardar_registro: ".$e->getMessage());
-    header('Location: ../formulario/form_sec.php');
+    header('Location: ../secretaria/');
     exit();
 } finally {
     if (isset($conn)) {

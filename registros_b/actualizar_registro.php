@@ -10,7 +10,7 @@ function sanitizeInput($data) {
 // 1. Verificar método de envío
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $_SESSION['error_message'] = 'Método no permitido';
-    header('Location: ../formulario/form_sec.php');
+    header('Location: ../actualizar/');
     exit();
 }
 
@@ -22,7 +22,7 @@ if (!isset($_POST['csrf_token']) ||
     error_log("Intento de CSRF detectado. Token esperado: ".$_SESSION['csrf_token'].", Token recibido: ".($_POST['csrf_token'] ?? ''));
     
     $_SESSION['error_message'] = 'Token de seguridad inválido o expirado. Por favor recarga el formulario.';
-    header('Location: ../formulario/form_sec.php');
+    header('Location: ../secretaria/');
     exit();
 }
 
@@ -33,7 +33,7 @@ unset($_SESSION['csrf_token_time']);
 // 4. Verificar que se proporcione el ID del registro
 if (!isset($_POST['id_registro']) || empty($_POST['id_registro'])) {
     $_SESSION['error_message'] = 'ID de registro no proporcionado';
-    header('Location: ../formulario/form_sec.php');
+    header('Location: ../actualizar/');
     exit();
 }
 
@@ -77,7 +77,7 @@ if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
 
 if (!empty($errors)) {
     $_SESSION['error_message'] = implode('\n', $errors);
-    header('Location: ../formulario/form_sec.php?editar=1&id=' . $id_registro);
+    header('Location: ../secretaria/?editar=1&id=' . $id_registro);
     exit();
 }
 
@@ -245,7 +245,7 @@ try {
 
     // Éxito - redireccionar con mensaje
     $_SESSION['success_message'] = 'El registro se actualizó con éxito';
-    header('Location: ../formulario/form_sec.php?editar=1&id=' . $id_registro);
+    header('Location: ../secretaria/?editar=1&id=' . $id_registro);
     exit();
 
 } catch (Exception $e) {
@@ -253,7 +253,7 @@ try {
         $conn->rollback();
     }
     $_SESSION['error_message'] = 'Error al actualizar el registro: ' . $e->getMessage();
-    header('Location: ../formulario/form_sec.php?editar=1&id=' . $id_registro);
+    header('Location: ../secretaria/?editar=1&id=' . $id_registro);
     exit();
 } finally {
     if (isset($conn)) {

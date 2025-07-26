@@ -29,15 +29,36 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
 case 'GET':
-    $search = isset($_GET["search"]) ? $conn->real_escape_string($_GET["search"]) : "";
-    $role = isset($_GET["role"]) ? $conn->real_escape_string($_GET["role"]) : "";
-    $status = isset($_GET["status"]) ? $conn->real_escape_string($_GET["status"]) : "";
-    $usrId = isset($_GET["usrId"]) ? $conn->real_escape_string($_GET["usrId"]) : "";
+        // Manejar la solicitud de un único usuario por separado para mayor claridad
+        if (isset($_GET["usrId"]) && !empty($_GET["usrId"])) {
+            $usrId = $conn->real_escape_string($_GET["usrId"]);
+            $query = "SELECT usrId, usr, rol, estado, logia FROM usuarios WHERE usrId = '$usrId'";
+            
+            try {
+                $result = $conn->query($query);
+                if ($result && $result->num_rows > 0) {
+                    $user = $result->fetch_assoc();
+                    // Devolvemos un objeto JSON con una clave 'user' (singular)
+                    echo json_encode(['user' => $user]);
+                } else {
+                    http_response_code(404 );
+                    echo json_encode(['error' => 'Usuario no encontrado.']);
+                }
+            } catch (Exception $e) {
+                http_response_code(500 );
+                echo json_encode(['error' => 'Error al buscar el usuario: ' . $e->getMessage()]);
+            }
+            exit; // Salimos para no ejecutar el código de la lista completa
+        }
 
-    $query = "SELECT * FROM usuarios WHERE 1=1";
-    if (!empty($usrId)) {
-        $query .= " AND usrId = '$usrId'";
-    } else {
+        // Manejar la solicitud de la lista completa de usuarios
+        $search = isset($_GET["search"]) ? $conn->real_escape_string($_GET["search"]) : "";
+        $role = isset($_GET["role"]) ? $conn->real_escape_string($_GET["role"]) : "";
+        $status = isset($_GET["status"]) ? $conn->real_escape_string($_GET["status"]) : "";
+
+        // Seleccionamos explícitamente las columnas para evitar problemas con tipos de datos inesperados
+        $query = "SELECT usrId, usr, rol, estado, logia FROM usuarios WHERE 1=1";
+
         if (!empty($search)) {
             $query .= " AND (usr LIKE '%$search%' OR logia LIKE '%$search%')";
         }
@@ -47,36 +68,31 @@ case 'GET':
         if ($status !== "") {
             $query .= " AND estado = '$status'";
         }
-    }
 
-    try {
-        $result = $conn->query($query);
-        $users = [];
-        while ($row = $result->fetch_assoc()) {
-            $users[] = $row;
-        }
+        try {
+            $result = $conn->query($query);
+            $users = [];
+            while ($row = $result->fetch_assoc()) {
+                $users[] = $row;
+            }
 
-        // Solo si no es consulta individual
-        if (empty($usrId)) {
-            $totalUsers = count($users);
-            $activeUsers = count(array_filter($users, fn($u) => $u['estado'] == 1));
-            $lastUpdate = $conn->query("SELECT MAX(ultimo_cambio) as last_update FROM usuarios")->fetch_assoc()['last_update'];
+            // Calcular estadísticas
+            $statsQuery = $conn->query("SELECT COUNT(*) as total, SUM(CASE WHEN estado = 1 THEN 1 ELSE 0 END) as active, MAX(ultimo_cambio) as last_update FROM usuarios");
+            $stats = $statsQuery->fetch_assoc();
+
             echo json_encode([
                 'users' => $users,
                 'stats' => [
-                    'totalUsers' => $totalUsers,
-                    'activeUsers' => $activeUsers,
-                    'lastUpdate' => $lastUpdate
+                    'totalUsers' => $stats['total'] ?? 0,
+                    'activeUsers' => $stats['active'] ?? 0,
+                    'lastUpdate' => $stats['last_update']
                 ]
             ]);
-        } else {
-            echo json_encode(['users' => $users]);
+        } catch (Exception $e) {
+            http_response_code(500 );
+            echo json_encode(['error' => 'Error al obtener la lista de usuarios: ' . $e->getMessage()]);
         }
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Error fetching users: ' . $e->getMessage()]);
-    }
-    break;
+        break;
 
     case 'POST':
         // Create new user
@@ -105,7 +121,7 @@ case 'GET':
             $row = $result->fetch_assoc();
             if ($row['count'] > 0) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Username already exists']);
+                echo json_encode(['error' => 'El nombre de usuario ya existe']);
                 exit;
             }
 
@@ -115,10 +131,10 @@ case 'GET':
             $logia = isset($data['logia']) ? $conn->real_escape_string($data['logia']) : '';
 
             $query = "INSERT INTO usuarios (usr, clave, rol, estado, logia, password_reset_required, ultimo_cambio) 
-                     VALUES ('$usr', '$hashedPassword', '$rol', '$estado', '$logia', 0, NOW())";
+                     VALUES ('$usr', '$hashedPassword', '$rol', '$estado', '$logia', 1, NOW())";
             
             if ($conn->query($query)) {
-                echo json_encode(['message' => 'User created successfully']);
+                echo json_encode(['message' => 'Usuario creado exitosamente']);
             } else {
                 throw new Exception($conn->error);
             }
@@ -134,7 +150,7 @@ case 'GET':
         
         if (!isset($data['usrId'])) {
             http_response_code(400);
-            echo json_encode(['error' => 'User ID is required']);
+            echo json_encode(['error' => 'ID de usuario re']);
             exit;
         }
 
@@ -150,7 +166,7 @@ case 'GET':
                 $row = $result->fetch_assoc();
                 if ($row['count'] > 0) {
                     http_response_code(400);
-                    echo json_encode(['error' => 'Username already exists']);
+                    echo json_encode(['error' => 'Este usuario ya existe']);
                     exit;
                 }
                 $updates[] = "usr = '$usr'";
@@ -159,7 +175,7 @@ case 'GET':
             if (isset($data['clave']) && !empty($data['clave'])) {
                 if (strlen($data['clave']) < 8) {
                     http_response_code(400);
-                    echo json_encode(['error' => 'Password must be at least 8 characters']);
+                    echo json_encode(['error' => 'La contraseña debe tener al menos 8 caracteres']);
                     exit;
                 }
                 $hashedPassword = password_hash($data['clave'], PASSWORD_DEFAULT);
@@ -184,14 +200,14 @@ case 'GET':
 
             if (empty($updates)) {
                 http_response_code(400);
-                echo json_encode(['error' => 'No fields to update']);
+                echo json_encode(['error' => 'Fallo al intentar actualizar']);
                 exit;
             }
 
             $query .= implode(', ', $updates) . ", ultimo_cambio = NOW() WHERE usrId = '$usrId'";
 
             if ($conn->query($query)) {
-                echo json_encode(['message' => 'User updated successfully']);
+                echo json_encode(['message' => 'Usuario Actualizado exitosamente']);
             } else {
                 throw new Exception($conn->error);
             }
@@ -207,7 +223,7 @@ case 'GET':
         
         if (!isset($data['usrId'])) {
             http_response_code(400);
-            echo json_encode(['error' => 'User ID is required']);
+            echo json_encode(['error' => 'ID de usuario requerido']);
             exit;
         }
 
@@ -220,7 +236,7 @@ case 'GET':
                     echo json_encode(['message' => 'User deleted successfully']);
                 } else {
                     http_response_code(404);
-                    echo json_encode(['error' => 'User not found']);
+                    echo json_encode(['error' => 'Usuario no Encontrado']);
                 }
             } else {
                 throw new Exception($conn->error);
@@ -233,7 +249,7 @@ case 'GET':
 
     default:
         http_response_code(405);
-        echo json_encode(['error' => 'Method not allowed']);
+        echo json_encode(['error' => 'Método no permitido']);
         break;
 }
 

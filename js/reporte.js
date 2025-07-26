@@ -16,7 +16,7 @@ function cargarDatos() {
         return;
     }
 
-    fetch(`../datos/api_reporte_tesoreria.php?trimestre=${trimestre}&anio=${anio}`)
+    fetch(`../datos-api/?trimestre=${trimestre}&anio=${anio}`)
         .then(res => {
             console.log("Estado HTTP:", res.status, res.statusText); // Depuración
             if (!res.ok) {

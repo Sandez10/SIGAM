@@ -11,8 +11,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario = trim($_POST['usuario'] ?? '');
     $clave = trim($_POST['clave'] ?? '');
 
+    // Configurar respuesta JSON
+    header('Content-Type: application/json');
+    $response = ['success' => false, 'message' => '', 'redirect' => ''];
+
     if (empty($usuario) || empty($clave)) {
-        header('Location: ../?error=Todos los campos son obligatorios');
+        $response['message'] = 'Todos los campos son obligatorios';
+        echo json_encode($response);
         exit;
     }
 
@@ -20,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db = Database::getInstance();
         $conn = $db->getConnection();
 
-        // Consulta mejorada: seleccionar solo los campos necesarios
         $stmt = $conn->prepare("
             SELECT usrId, usr, rol, clave, estado, password_reset_required 
             FROM usuarios 
@@ -33,45 +37,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         if ($usuario_data && password_verify($clave, $usuario_data['clave'])) {
-            // Manejo de diferentes estados
             switch ($usuario_data['estado']) {
                 case ESTADO_INACTIVO:
-                    header("Location: ../?error=Tu cuenta está inactiva. Por favor, contacta al administrador.");
-                    exit;
+                    $response['message'] = 'Tu cuenta está inactiva. Por favor, contacta al administrador.';
+                    break;
                 
                 case ESTADO_SUSPENDIDO:
-                    header("Location: ../?error=Tu cuenta está suspendida. Contacta al administrador para más información.");
-                    exit;
+                    $response['message'] = 'Tu cuenta está suspendida. Contacta al administrador para más información.';
+                    break;
                 
                 case ESTADO_ACTIVO:
-                    // Iniciar sesión exitosamente
                     $_SESSION['user_id'] = $usuario_data['usrId'];
                     $_SESSION['user_name'] = $usuario_data['usr'];
                     $_SESSION['rol'] = $usuario_data['rol'];
                     
-                    // Verificar si se requiere cambio de contraseña
                     if ($usuario_data['password_reset_required']) {
                         $_SESSION['temp_user'] = $usuario_data;
-                        header("Location: cambiar_contrasena.php");
-                        exit;
-                    }
-                    
-                    header("Location: ../plataforma/principal.php");
-                    exit;
+                        $response['success'] = true;
+  //                      $response['redirect'] = 'cambiar_contrasena.php';
+                        // Redirección a cambiar contraseña (si existe)
+//                        $response['redirect'] = '/SIGAM/cambiar-contrasena';
+                        $response['redirect'] = 'cambio/';
+ 
+                    } else {
+                        $response['success'] = true;
+//                        $response['redirect'] = "plataforma/principal.php";
+                        // Redirección a plataforma principal
+                        $response['redirect'] = 'plataforma/';
+
+                     }
+                    break;
                 
                 default:
-                    header("Location: ../?error=Estado de cuenta no reconocido");
-                    exit;
+                    $response['message'] = 'Estado de cuenta no reconocido';
+                    break;
             }
         } else {
-            header("Location: ../?error=Usuario o contraseña incorrectos");
-            exit;
+            $response['message'] = 'Usuario o contraseña incorrectos';
         }
     } catch (Exception $e) {
         error_log("Error en el Inicio de Sesión: " . $e->getMessage());
-        header("Location: ../?error=Ocurrió un error inesperado. Por favor, inténtalo nuevamente.");
-        exit;
+        $response['message'] = 'Ocurrió un error inesperado. Por favor, inténtalo nuevamente.';
     }
+
+    echo json_encode($response);
+    exit;
 } else {
     header("Location: ../");
     exit;

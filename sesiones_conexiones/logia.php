@@ -17,7 +17,7 @@ function obtenerDatosLogia(): ?array {
         // Consulta optimizada para obtener ambos datos
         $query = "SELECT l.logia, l.clave_logia, l.oriente
                  FROM usuarios u
-                 INNER JOIN logias l ON u.logia = l.logia
+                 INNER JOIN logias l ON u.logia = l.clave_logia
                  WHERE u.usrId = ? 
                  LIMIT 1";
 
@@ -41,7 +41,7 @@ function obtenerDatosLogia(): ?array {
         $datos = $result->fetch_assoc();
         $stmt->close();
 
-        // Depuración (puedes eliminar esto después)
+        // Depuración (eliminar esto después)
         error_log("Datos obtenidos de logia: ".print_r($datos, true));
 
         return [

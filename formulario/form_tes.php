@@ -98,11 +98,11 @@ if (isset($_GET['id'])) {
 
       <nav>
         <ul class="space-y-2">
-          <li><a href="../plataforma/principal.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-          <li><a href="../usuarios/all_usuarios.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
-          <li><a href="form_sec.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Secretaría</a></li>
-          <li><a href="../reportes/ver_reportes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
-          <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg bg-[var(--error-color)] text-white mt-4">Cerrar Sesión</a></li>
+          <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
+          <li><a href="../usuarios/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
+          <li><a href="../secretaria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Secretaría</a></li>
+          <li><a href="../reportes/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
+          <li><a href="../salir/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Cerrar Sesión</a></li>
         </ul>
       </nav>
     </aside>
@@ -135,8 +135,8 @@ if (isset($_GET['id'])) {
 
     <nav>
       <ul class="space-y-2">
-        <li><a href="../plataforma/principal.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-        <li><a href="../usuarios/all_usuarios.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
+        <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
+        <li><a href="../usuarios/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
         <li><a href="form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
         <li><a href="../reportes/ver_reportes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
         <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg bg-[var(--error-color)] text-white mt-4">Cerrar Sesión</a></li>
@@ -167,7 +167,7 @@ if (isset($_GET['id'])) {
       <!-- Form -->
       <div class="glass-card p-6 mt-6">
         <h3 class="text-xl font-semibold mb-6">Movimiento de Tesorería</h3>
-          <form action="../registros_b/guardar_registro_tes.php" method="POST" id="tesoreriaForm" class="grid grid-cols-1 gap-8 text-sm" enctype="multipart/form-data" novalidate>
+          <form action="../guardar-tesoreria/" method="POST" id="tesoreriaForm" class="grid grid-cols-1 gap-8 text-sm" enctype="multipart/form-data" novalidate>
           <!-- Logia Details -->
           <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
           <!-- Campo Logia -->
@@ -202,7 +202,7 @@ if (isset($_GET['id'])) {
             <!-- Campo Nombre del Hermano con búsqueda dinámica (select) -->
             <div class="group relative">
                 <label for="id_hermano" class="block mb-1 font-medium">Nombre del H.˙.</label>
-                <select id="id_hermano" class="w-full glass-card">
+                <select id="id_hermano" name="id_hermano"class="w-full glass-card">
                     <option value="">Seleccionar hermano...</option>
                     <?php foreach ($hermanos as $hermano): ?>
                     <option value="<?= $hermano['id'] ?>">
@@ -213,14 +213,14 @@ if (isset($_GET['id'])) {
                             </div>
                 <div class="group relative mb-4">
                     <label for="grado" class="block mb-1 font-medium">Grado Masónico</label>
-                    <input type="text" id="grado" class="w-full glass-card" readonly>
+                    <input type="text" id="grado" name="grado" class="w-full glass-card" readonly>
                 </div>
-
+                  <!-- Alterar la tabla para que se cambie el estado en la tabla Registros 
                 <div class="group relative">
                     <label for="estado" class="block mb-1 font-medium">Estado Administrativo</label>
-                    <input type="text" id="estado" class="w-full glass-card" readonly>
+                    <input type="text" id="estado" name="estado" class="w-full glass-card" readonly>
                 </div>
-            <!-- Campo Grado como input de texto readonly -->
+             Campo Grado como input de texto readonly -->
                 <div class="group relative">
                   <label for="oriente" class="block mb-1 font-medium">Iniciación</label>
                   <input type="number" id ="iniciacion" name="iniciacion" class="w-full glass-card" placeholder="Ingresar la cantidad de capitas" required />
@@ -237,8 +237,13 @@ if (isset($_GET['id'])) {
                   <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
                 </div>
                 <div class="group relative">
+                  <label for="afiliacion" class="block mb-1 font-medium">Afiliación</label>
+                  <input id="afiliacion" type="number" name="afiliacion" class="w-full glass-card" placeholder="Ingresa la cantidad de Afiliación" required />
+                  <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
+                </div>
+                <div class="group relative">
                   <label for="exaltacion" class="block mb-1 font-medium">Exaltación</label>
-                  <input id="exaltacion" type="number" name="exaltacion" class="w-full glass-card" placeholder="Ingresa la cantidad de Iniciación" required />
+                  <input id="exaltacion" type="number" name="exaltacion" class="w-full glass-card" placeholder="Ingresa la cantidad de Exaltacion" required />
                   <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
                 </div>
               </div>

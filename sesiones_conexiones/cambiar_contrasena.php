@@ -89,12 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $_SESSION['success'] = "Contraseña actualizada exitosamente";
-        header("Location: ../plataforma/principal.php");
+        header("Location: ../plataforma/");
         exit;
 
     } catch (Exception $e) {
         $_SESSION['error'] = $e->getMessage();
-        header("Location: cambiar_contrasena.php");
+        header("Location: cambio/");
         exit;
     }
 }

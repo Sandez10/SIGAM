@@ -6,7 +6,7 @@ require_once '../database/conexion.php';
 // Obtener conexión
 $database = Database::getInstance();
 $conn = $database->getConnection();
-$stmt = $conn->prepare("SELECT id_logias, logia FROM logias");
+$stmt = $conn->prepare("SELECT id_logias, logia, clave_logia FROM logias");
 $stmt->execute();
 $result = $stmt->get_result();
 $logias = $result->fetch_all(MYSQLI_ASSOC); // Corregido: cambiamos $hermanos por $logias
@@ -26,6 +26,7 @@ $stmt->close();
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet" />
   <link rel="stylesheet" href="../css/menu.css"/>
+  <link rel="stylesheet" href="../css/usuario.css"/>
 
 </head>
 <body>
@@ -47,7 +48,7 @@ $stmt->close();
       <p class="text-xs opacity-90">Sistema Integral de Gestión Administrativa</p>
       <nav>
         <ul class="space-y-2">
-          <li><a href="../plataforma/principal.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
+          <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
           <li><a href="../formulario/form_sec.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Secretaría</a></li>
           <li><a href="../formulario/form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
           <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Cerrar Sesión</a></li>
@@ -83,7 +84,7 @@ $stmt->close();
 
     <nav>
       <ul class="space-y-2">
-        <li><a href="../plataforma/principal.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
+        <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
         <li><a href="../usuarios/all_usuarios.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
         <li><a href="form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
         <li><a href="../reportes/ver_reportes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
@@ -151,7 +152,7 @@ $stmt->close();
             </div>
             <select id="filterRole" class="glass-card px-4 py-2.5 text-sm">
               <option value="">Filtrar por Rol</option>
-              <option value="admin">Administrador</option>
+              <option value="administrador">Administrador</option>
               <option value="miembro">miembro</option>
               <option value="superadmin">Super Administrador</option>
             </select>
@@ -192,87 +193,53 @@ $stmt->close();
         <div class="glass-card p-6">
           <h3 class="text-xl font-semibold mb-6">Crear Nuevo Usuario</h3>
           <form id="createUserForm" class="grid grid-cols-1 gap-8 text-sm" novalidate>
-              <div class="grid grid-cols-2 gap-6">
-                  <div>
-                      <label for="createUsuario" class="block mb-1 font-medium">Nombre de Usuario</label>
-                      <input id="createUsuario" type="text" class="w-full glass-card" placeholder="Ingrese nombre de usuario" required />
-                      <p class="error-message hidden" id="createUsuario-error">Este campo es obligatorio</p>
-                  </div>
-                  <div>
-                      <label for="createClave" class="block mb-1 font-medium">Contraseña</label>
-                      <div class="relative">
-                          <input id="createClave" type="password" class="w-full glass-card pr-12" placeholder="Ingrese contraseña" required />
-                          <button type="button" id="toggleCreatePassword" class="absolute right-3 top-1/2 transform -translate-y-1/2">
-                              <svg class="w-5 h-5 text-[var(--text-light)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c-1.5-2.5-4-4-7-4s-5.5 1.5-7 4m14 0c-1.5 2.5-4 4-7 4s-5.5-1.5-7-4"/>
-                              </svg>
-                          </button>
-                      </div>
-                      <p class="error-message hidden" id="createClave-error">La contraseña debe tener al menos 8 caracteres</p>
-                  </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-6">
-                  <div>
-                      <label for="createRol" class="block mb-1 font-medium">Rol</label>
-                      <select id="createRol" class="w-full glass-card" required>
-                          <option value="">-- Seleccionar Rol --</option>
-                          <option value="admin">Administrador</option>
-                          <option value="usuario">Usuario</option>
-                          <option value="supersu">Super Usuario</option>
-                      </select>
-                      <p class="error-message hidden" id="createRol-error">Seleccione un rol</p>
-                  </div>
-                  <div>
-                      <label for="createEstado" class="block mb-1 font-medium">Estado</label>
-                      <select id="createEstado" class="w-full glass-card" required>
-                          <option value="">-- Seleccionar Estado --</option>
-                          <option value="1">Activo</option>
-                          <option value="0">Inactivo</option>
-                          <option value="2">Suspendido</option>
-                      </select>
-                  </div>
-              </div>
-
-              <div class="grid grid-cols-1 gap-6">
-          <div>
-              <label for="logia-search" class="block mb-1 font-medium">Logia.˙.</label>
-              <div>
-                  <!-- Input de búsqueda -->
-                  <input type="text" id="logia-search" name="logia-search" placeholder="Buscar logia..." 
-                        class="w-full glass-card mb-1 p-2" autocomplete="off">
-                  
-                  <!-- Select oculto que enviará el valor real -->
-                  <select id="logia" name="logia" class="w-full glass-card hidden" required>
-                      <option value="">Seleccione una logia</option>
-                      <?php foreach ($logias as $logia): ?>
-                          <option value="<?= htmlspecialchars($logia['id_logias']) ?>" 
-                              data-nombre="<?= htmlspecialchars($logia['logia']) ?>"
-                              <?= (isset($_GET['logia']) && $_GET['logia'] == $logia['id_logias']) ? 'selected' : '' ?>>
-                              <?= htmlspecialchars($logia['logia']) ?>
-                          </option>
-                      <?php endforeach; ?>
-                  </select>
-                  
-                  <!-- Lista de resultados -->
-                  <div id="logia-results" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
-              </div>
-          </div>
-              <div class="flex justify-end gap-4 mt-6">
-                  <button type="reset" class="btn btn-secondary">
-                      <svg class="inline-block w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                      </svg>
-                      Limpiar
-                  </button>
-                  <button type="submit" class="btn btn-primary">
-                      <svg class="inline-block w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
-                      </svg>
-                      Guardar
-                  </button>
-              </div>
-          </form>
+                <!-- El contenido del formulario es el mismo que tenías en la pestaña "create" -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label for="createUsuario" class="block mb-1 font-medium">Nombre de Usuario</label>
+                        <input id="createUsuario" type="text" class="w-full glass-card" placeholder="Ingrese nombre de usuario" required />
+                    </div>
+                    <div>
+                        <label for="createClave" class="block mb-1 font-medium">Contraseña</label>
+                        <input id="createClave" type="password" class="w-full glass-card" placeholder="Ingrese contraseña" required />
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label for="createRol" class="block mb-1 font-medium">Rol</label>
+                        <select id="createRol" class="w-full glass-card" required>
+                            <option value="">-- Seleccionar Rol --</option>
+                            <option value="admin">Administrador</option>
+                            <option value="usuario">Usuario</option>
+                            <option value="supersu">Super Usuario</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="createEstado" class="block mb-1 font-medium">Estado</label>
+                        <select id="createEstado" class="w-full glass-card" required>
+                            <option value="">-- Seleccionar Estado --</option>
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="logia-search" class="block mb-1 font-medium">Logia</label>
+                    <input type="text" id="logia-search" placeholder="Escriba para buscar..." class="w-full glass-card mb-1 p-2" autocomplete="off">
+                    <select id="logia" name="logia" class="w-full glass-card hidden" required>
+                        <option value="">Seleccione una logia</option>
+                        <?php foreach ($logias as $logia): ?>
+                            <option value="<?= htmlspecialchars($logia['id_logias']) ?>"><?= htmlspecialchars($logia['logia']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div id="logia-results" class="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg hidden max-h-60 overflow-y-auto"></div>
+                </div>
+                <div class="flex justify-end gap-4 mt-6">
+                    <!-- Botón para cerrar el nuevo modal -->
+                    <button type="button" id="closeCreateModal" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
         </div>
       </div>
 
@@ -309,9 +276,9 @@ $stmt->close();
                 <label for="editRol" class="block mb-1 font-medium">Rol</label>
                 <select id="editRol" class="w-full" required>
                   <option value="">-- Seleccionar Rol --</option>
-                  <option value="admin">Administrador</option>
-                  <option value="usuario">Usuario</option>
-                  <option value="supersu">Super Usuario</option>
+                  <option value="administrador">Administrador</option>
+                  <option value="miembro">Usuario</option>
+                  <option value="superadmin">Super admin</option>
                 </select>
                 <p class="error-message hidden" id="editRol-error">Seleccione un rol</p>
               </div>
@@ -326,15 +293,10 @@ $stmt->close();
                   <option value="2">Suspendido</option>
                 </select>
               </div>
-              <div>
-                <label for="editTelefono" class="block mb-1 font-medium">Teléfono (Opcional)</label>
-                <input id="editTelefono" type="tel" class="w-full glass-card" placeholder="Ej. 555-123-4567" pattern="[0-9]{10}" />
-                <p class="error-message hidden" id="editTelefono-error">Ingrese un número de teléfono válido (10 dígitos)</p>
-              </div>
             </div>
             <div class="flex justify-end gap-4 mt-6">
               <button type="button" id="closeEditModal" class="btn btn-secondary">Cancelar</button>
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" id="edit-btn" class="btn btn-primary">
                 <svg class="inline-block w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                 Guardar
               </button>
@@ -363,7 +325,7 @@ $stmt->close();
           </div>
           <div class="flex justify-end gap-4 mt-6">
             <button id="cancelDelete" class="btn btn-secondary">Cancelar</button>
-            <button id="confirmDelete" class="btn btn-danger" disabled>
+            <button id="confirmDelete" class="btn btn-danger">
               <svg class="inline-block w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
               Eliminar
             </button>
@@ -377,7 +339,7 @@ $stmt->close();
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-    <script src="all_usr.js"> </script>
+   <script src="all_usr.js"> </script>
         <script src="../js/menu_mobile.js"> </script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
