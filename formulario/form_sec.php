@@ -117,70 +117,7 @@ if (!isset($_SESSION['csrf_token'])) {
   <div class="fixed top-1/3 left-40 w-16 h-16 rounded-full floating delay-2"></div>
   <div class="fixed bottom-1/4 right-1/4 w-24 h-24 rounded-full floating delay-3"></div>
   <div class="container">
-<!-- Versión Desktop (visible en pantallas grandes) -->
-<aside class="sidebar hidden lg:block"> <!-- Cambiado: agregado hidden lg:block -->
-  <div class="flex items-center gap-3 mb-8">
-    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
-      <img src="../img/sigam_transparente.png" alt="Logo SIGAM" class="w-10 h-10 object-contain">
-    </div>
-    <h2 class="text-lg font-bold text-[var(--primary-color)]">SIGAM</h2>
-  </div>
-  <p class="text-xs opacity-90">Sistema Integral de Gestión Administrativa</p>
-
-  <nav>
-    <ul class="space-y-2">
-      <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-      <li><a href="../usuarios/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
-      <li><a href="../tesoreria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
-      <li><a href="../actas/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Actas</a></li>
-      <li><a href="../reportes/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
-      <li><a href="../configuracion/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Configuración</a></li>      
-      <li><a href="../salir/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Cerrar Sesión</a></li>      
-    </ul>
-  </nav>
-</aside>
-
-<!-- Botón Hamburguesa -->
-<div class="lg:hidden fixed top-4 left-4 z-40">
-  <button class="hamburger" title="Abrir menú" aria-label="Abrir menú">
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-    </svg>
-  </button>
-</div>
-
-<!-- Menú Móvil -->
-<div id="mobile-menu" class="mobile-menu lg:hidden">
-  <div class="p-6 pt-16 relative">
-    <button class="absolute top-4 right-4 p-2 close-menu" aria-label="Cerrar menú">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
-    </button>
-
-    <!-- Contenido -->
-    <div class="flex items-center gap-3 mb-8">
-      <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
-        <img src="../img/sigam_transparente.png" alt="Logo SIGAM" class="w-10 h-10 object-contain">
-      </div>
-      <h2 class="text-lg font-bold text-[var(--primary-color)]">SIGAM</h2>
-    </div>
-    <p class="text-xs opacity-90 mb-6">Sistema Integral de Gestión Administrativa</p>
-
-    <nav>
-      <ul class="space-y-2">
-      <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-      <li><a href="../usuarios/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
-      <li><a href="../tesoreria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
-      <li><a href="../actas/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Actas</a></li>
-      <li><a href="../reportes/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
-      <li><a href="../configuracion/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Configuración</a></li>      
-      <li><a href="../salir/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Cerrar Sesión</a></li>      
-      </ul>
-    </nav>
-  </div>
-</div>
-
+  <?php include '../configuracion/panel_menu.php'; ?>
 <!-- Overlay -->
 <div class="menu-overlay"></div>
 

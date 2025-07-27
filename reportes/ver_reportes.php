@@ -45,6 +45,40 @@ if ($logia_registro) {
     $hermanos = $result->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 }
+
+$rol_usuario = $_SESSION['rol'] ?? 'miembro'; // rol por defecto si no está definido
+
+
+$permisos = [
+    'superadmin' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],
+    'administrador' => ['inicio', 'actas', 'salir'],
+    'miembro' => ['inicio', 'tesoreria', 'actas', 'salir']
+];
+function generarMenu($rol, $permisos) {
+    if (!isset($permisos[$rol])) {
+        return '<li><span class="block p-2 text-red-500">Permisos no definidos</span></li>';
+    }
+
+    $items = [
+        'inicio' => ['label' => 'Inicio', 'url' => '../plataforma/'],
+        'usuarios' => ['label' => 'Usuarios', 'url' => '../usuarios/'],
+        'tesoreria' => ['label' => 'Tesorería', 'url' => '../tesoreria/'],
+        'secretaria' => ['label' => 'Secretaría', 'url' => '../secretaria/'],
+        'actas' => ['label' => 'Actas', 'url' => '../actas/'],
+        'reportes' => ['label' => 'Reportes', 'url' => '../reportes/'],
+        'configuracion' => ['label' => 'Configuración', 'url' => '../'],
+        'salir' => ['label' => 'Cerrar Sesión', 'url' => '../salir/', 'extra_class' => 'bg-[var(--error-color)] text-white mt-4'],
+    ];
+
+    $html = '';
+    foreach ($permisos[$rol] as $clave) {
+        if (!isset($items[$clave])) continue; // por si se agrega un permiso que no esté definido en items
+        $item = $items[$clave];
+        $extra = $item['extra_class'] ?? '';
+        $html .= '<li><a href="' . $item['url'] . '" class="block p-2 rounded-lg hover:bg-[var(--border-color)] ' . $extra . '">' . $item['label'] . '</a></li>';
+    }
+    return $html;
+}
 ?>
 
 <!DOCTYPE html>
@@ -70,25 +104,22 @@ if ($logia_registro) {
 
   <div class="container mx-auto px-4">
     <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="flex items-center gap-3 mb-8">
-        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
-          <img src="../img/sigam_transparente.png" alt="Logo SIGAM" class="w-10 h-10 object-contain">
-        </div>
-        <h2 class="text-lg font-bold text-[var(--primary-color)]">SIGAM</h2>
-      </div>
-      <p class="text-xs opacity-90">Sistema Integral de Gestión Administrativa</p>
-      <nav>
-        <ul class="space-y-2">
-          <li><a href="../plataforma/principal.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-          <li><a href="../usuarios/all_usuarios.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
-          <li><a href="../formulario/form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
-          <li><a href="../formulario/form_sec.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Secretaría</a></li>
-          <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg bg-[var(--error-color)] text-white mt-4">Cerrar Sesión</a></li>
-        </ul>
-      </nav>
-    </aside>
-    <!-- Botón Hamburguesa -->
+<aside class="sidebar"> 
+  <div class="flex items-center gap-3 mb-8">
+    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
+      <img src="../img/sigam_transparente.png" alt="Logo SIGAM" class="w-10 h-10 object-contain">
+    </div>
+    <h2 class="text-lg font-bold text-[var(--primary-color)]">SIGAM</h2>
+  </div>
+  <p class="text-xs opacity-90">Sistema Integral de Gestión Administrativa</p>
+  <nav>
+    <ul class="space-y-2">
+      <?= generarMenu($_SESSION['rol'], $permisos) ?>
+    </ul>
+  </nav>
+</aside>
+
+<!-- Botón Hamburguesa -->
 <div class="lg:hidden fixed top-4 left-4 z-40">
   <button class="hamburger" title="Abrir menú" aria-label="Abrir menú">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,6 +127,7 @@ if ($logia_registro) {
     </svg>
   </button>
 </div>
+
 
 <!-- Menú Móvil -->
 <div id="mobile-menu" class="mobile-menu lg:hidden">
@@ -105,8 +137,6 @@ if ($logia_registro) {
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
       </svg>
     </button>
-
-    <!-- Contenido -->
     <div class="flex items-center gap-3 mb-8">
       <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
         <img src="../img/sigam_transparente.png" alt="Logo SIGAM" class="w-10 h-10 object-contain">
@@ -117,11 +147,7 @@ if ($logia_registro) {
 
     <nav>
       <ul class="space-y-2">
-        <li><a href="../plataforma/principal.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-        <li><a href="../usuarios/all_usuarios.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
-        <li><a href="form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
-        <li><a href="../reportes/ver_reportes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
-        <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg bg-[var(--error-color)] text-white mt-4">Cerrar Sesión</a></li>
+        <?= generarMenu($_SESSION['rol'], $permisos) ?>
       </ul>
     </nav>
   </div>

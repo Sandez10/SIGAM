@@ -11,6 +11,14 @@ $stmt->execute();
 $result = $stmt->get_result();
 $logias = $result->fetch_all(MYSQLI_ASSOC); // Corregido: cambiamos $hermanos por $logias
 $stmt->close();
+// Verificar si el rol es admin
+if ($_SESSION['rol'] !== 'superadmin') {
+    echo "<script>
+        alert('No tienes permiso para acceder a esta página.');
+        history.back();
+    </script>";
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -49,9 +57,11 @@ $stmt->close();
       <nav>
         <ul class="space-y-2">
           <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-          <li><a href="../formulario/form_sec.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Secretaría</a></li>
-          <li><a href="../formulario/form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
-          <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Cerrar Sesión</a></li>
+          <li><a href="../secretaria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Secretaría</a></li>
+          <li><a href="../tesoreria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
+          <li><a href="../actas/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Subir reporte</a></li>
+          <li><a href="../reportes/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Generar reporte</a></li>  
+          <li><a href="../salir/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Cerrar Sesión</a></li>
         </ul>
       </nav>
     </aside>
@@ -85,8 +95,9 @@ $stmt->close();
     <nav>
       <ul class="space-y-2">
         <li><a href="../plataforma/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Inicio</a></li>
-        <li><a href="../usuarios/all_usuarios.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Usuarios</a></li>
-        <li><a href="form_tes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
+        <li><a href="../tesoreria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Tesorería</a></li>
+        <li><a href="../secretaria/" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Secretaría</a></li>
+
         <li><a href="../reportes/ver_reportes.php" class="block p-2 rounded-lg hover:bg-[var(--border-color)]">Reportes</a></li>
         <li><a href="../sesiones_conexiones/logout.php" class="block p-2 rounded-lg bg-[var(--error-color)] text-white mt-4">Cerrar Sesión</a></li>
       </ul>
@@ -209,9 +220,9 @@ $stmt->close();
                         <label for="createRol" class="block mb-1 font-medium">Rol</label>
                         <select id="createRol" class="w-full glass-card" required>
                             <option value="">-- Seleccionar Rol --</option>
-                            <option value="admin">Administrador</option>
-                            <option value="usuario">Usuario</option>
-                            <option value="supersu">Super Usuario</option>
+                            <option value="administrador">Administrador</option>
+                            <option value="miembro">Usuario</option>
+                            <option value="superadmin">Super Administrador</option>
                         </select>
                     </div>
                     <div>
@@ -278,7 +289,7 @@ $stmt->close();
                   <option value="">-- Seleccionar Rol --</option>
                   <option value="administrador">Administrador</option>
                   <option value="miembro">Usuario</option>
-                  <option value="superadmin">Super admin</option>
+                  <option value="superadmin">Super Administrador</option>
                 </select>
                 <p class="error-message hidden" id="editRol-error">Seleccione un rol</p>
               </div>

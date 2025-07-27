@@ -14,6 +14,7 @@
     RewriteRule ^guardar-tesoreria/?$ registros_b/guardar_registro_tes.php [NC,L]
     RewriteRule ^datos-api/?$ datos/api_reporte_tesoreria.php [NC,L]
     RewriteRule ^cambio/?$ sesiones_conexiones/cambiar_contrasena.php [NC,L]
+    RewriteRule ^panel/?$ configuracion/cambiar_contrasena.php [NC,L]
 
     
 

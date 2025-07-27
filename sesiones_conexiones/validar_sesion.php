@@ -25,8 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db = Database::getInstance();
         $conn = $db->getConnection();
 
-        $stmt = $conn->prepare("
-            SELECT usrId, usr, rol, clave, estado, password_reset_required 
+        $stmt = $conn->prepare("SELECT usrId, usr, rol, clave, estado, password_reset_required 
             FROM usuarios 
             WHERE usr = ?
         ");
