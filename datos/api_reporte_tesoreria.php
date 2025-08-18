@@ -1,6 +1,17 @@
 <?php
 header('Content-Type: application/json');
 require_once '../database/conexion.php';
+require_once '../sesiones_conexiones/logia.php';
+$datosLogia = obtenerDatosLogia();
+
+if ($datosLogia === null) {
+    die("No se pudieron obtener los datos de la logia. Revisa los logs de error.");
+}
+
+// Asignar variables
+$logia_registro = $datosLogia['logia'];
+$clave_logia = $datosLogia['clave_logia'];
+
 
 $db = Database::getInstance();
 $conn = $db->getConnection();
@@ -48,7 +59,8 @@ $queryPagos = "SELECT
                 tes.total
               FROM tesoreria tes
               WHERE YEAR(tes.fecha_registro) = ?
-              AND MONTH(tes.fecha_registro) BETWEEN ? AND ?";
+              AND MONTH(tes.fecha_registro) BETWEEN ? AND ?
+              AND tes.clave_logia = ?";
 
 // Consulta para hermanos desplomados (estado = 3)
 $queryDesplomados = "SELECT nombre_completo, grado_masonico 
@@ -69,7 +81,7 @@ $response = ['success' => false, 'data' => [], 'desplomados' => [], 'bajas' => [
 // 1. Obtener pagos
 $stmt = $conn->prepare($queryPagos);
 if ($stmt) {
-    $stmt->bind_param("iii", $anio, $mesInicio, $mesFin);
+    $stmt->bind_param("iiis", $anio, $mesInicio, $mesFin, $clave_logia);
     $stmt->execute();
     $result = $stmt->get_result();
     

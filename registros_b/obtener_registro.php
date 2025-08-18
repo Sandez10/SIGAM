@@ -47,7 +47,7 @@ function obtenerListadoHermanos($logia_registro) {
 }
 
 /**
- * Obtiene todos los datos de un registro específico (versión optimizada)
+ * Obtiene todos los datos de un registro específico
  */
 function obtenerDatosRegistroCompleto($id_registro, $logia_registro) {
     $response = ['success' => false, 'message' => '', 'data' => []];
@@ -76,7 +76,7 @@ function obtenerDatosRegistroCompleto($id_registro, $logia_registro) {
             throw new RuntimeException("El registro no pertenece a tu logia");
         }
 
-        // 2. Obtener datos principales (versión simplificada)
+        // 2. Obtener datos principales 
         $query = "SELECT r.* FROM registros r WHERE r.id = ?";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $id);

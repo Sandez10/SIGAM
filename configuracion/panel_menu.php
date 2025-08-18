@@ -2,10 +2,8 @@
 require_once '../sesiones_conexiones/sesion_config.php';
 require_once '../database/conexion.php';
 
-// Definir la URL base para rutas consistentes
-define('BASE_URL', '/sigam/'); // Ajusta según la raíz de tu proyecto
+define('BASE_URL', '/sigam/');
 
-// Redirigir si no hay sesión activa
 if (!isset($_SESSION['user_id'])) {
     header("Location: " . BASE_URL);
     exit;
@@ -14,18 +12,8 @@ if (!isset($_SESSION['user_id'])) {
 try {
     $db = Database::getInstance();
     $conn = $db->getConnection();
-    if (!$conn) {
-        error_log("Error: No se pudo conectar a la base de datos en panel_menu.php");
-        header("Location: " . BASE_URL);
-        exit;
-    }
 
     $stmt = $conn->prepare("SELECT usr, rol, logia, password_reset_required FROM usuarios WHERE usrId = ?");
-    if (!$stmt) {
-        error_log("Error: No se pudo preparar la consulta en panel_menu.php: " . $conn->error);
-        header("Location: " . BASE_URL);
-        exit;
-    }
     $stmt->bind_param("i", $_SESSION['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -33,13 +21,11 @@ try {
     $stmt->close();
 
     if (!$user) {
-        error_log("Error: No se encontró el usuario con usrId {$_SESSION['user_id']} en panel_menu.php");
         session_destroy();
         header("Location: " . BASE_URL);
         exit;
     }
 
-    // Actualizar datos de sesión
     $_SESSION['user_name'] = $user['usr'];
     $_SESSION['rol'] = $user['rol'];
     $_SESSION['password_reset_required'] = $user['password_reset_required'];
@@ -55,37 +41,55 @@ try {
     exit;
 }
 
-// Definir permisos por rol
 $permisos = [
     'superadmin' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],
     'administrador' => ['inicio', 'actas', 'salir'],
     'miembro' => ['inicio', 'tesoreria', 'actas', 'salir']
 ];
 
-// Definir elementos del menú con sus URLs
 $menu_items = [
     'Inicio' => ['url' => BASE_URL . 'plataforma/', 'permiso' => 'inicio'],
-    'Secretaría' => ['url' => BASE_URL . 'secretaria/', 'permiso' => 'secretaria'],
+    'Secretaría' => [
+        'permiso' => 'secretaria',
+        'submenu' => [
+//            'Alta de Tesorero/Secretario' => BASE_URL . 'configuracion/',
+            'Lista de Registros' => BASE_URL . 'configuracion/',
+            'Alta de Tesorero/Secretario' => BASE_URL . 'secretaria/alta/',
+//            'Lista de Registros' => BASE_URL . 'secretaria/listado_tes_sec.php',
+//            'Visualizar Reportes' => BASE_URL . 'mostrar_reportes/'
+            'Actas' => BASE_URL . 'actas/',
+            'Visualizar Reportes' => BASE_URL . 'configuracion/'
+        ]
+    ],
     'Usuarios' => ['url' => BASE_URL . 'usuarios/', 'permiso' => 'usuarios'],
     'Tesorería' => ['url' => BASE_URL . 'tesoreria/', 'permiso' => 'tesoreria'],
-    'Actas' => ['url' => BASE_URL . 'actas/', 'permiso' => 'actas'],
     'Reportes' => ['url' => BASE_URL . 'reportes/', 'permiso' => 'reportes'],
     'Configuración' => ['url' => BASE_URL . 'configuracion/', 'permiso' => 'configuracion'],
     'Cerrar Sesión' => ['url' => BASE_URL . 'salir/', 'permiso' => 'salir']
 ];
 
-// Obtener la página actual para resaltar el enlace activo
 $current_page = $_SERVER['REQUEST_URI'];
 
-// Función para generar los elementos del menú según permisos
-function generate_menu_items($items, $current_page, $rol_actual, $permisos, $is_mobile = false) {
+function generate_menu_items($items, $current_page, $rol, $permisos, $is_mobile = false) {
     $output = '';
-    $allowed_sections = isset($permisos[$rol_actual]) ? $permisos[$rol_actual] : [];
-    
+    $allowed = $permisos[$rol] ?? [];
+
     foreach ($items as $label => $data) {
-        if (in_array($data['permiso'], $allowed_sections)) {
-            $is_active = (strpos($current_page, parse_url($data['url'], PHP_URL_PATH)) !== false) ? 'active' : '';
-            $classes = "block p-2 rounded-lg hover:bg-[var(--border-color)] $is_active";
+        if (!in_array($data['permiso'], $allowed)) continue;
+
+        if (isset($data['submenu'])) {
+            $output .= "<li class='relative'>";
+            $output .= "<details class='w-full'>";
+            $output .= "<summary class='p-2 cursor-pointer hover:bg-[var(--border-color)] rounded-lg'>$label ▾</summary>";
+            $output .= "<ul class='ml-4 mt-1 space-y-1'>";
+            foreach ($data['submenu'] as $sublabel => $url) {
+                $active = strpos($current_page, parse_url($url, PHP_URL_PATH)) !== false ? 'active' : '';
+                $output .= "<li><a href=\"$url\" class=\"block p-2 rounded hover:bg-[var(--border-color)] $active\">$sublabel</a></li>";
+            }
+            $output .= "</ul></details></li>";
+        } else {
+            $active = strpos($current_page, parse_url($data['url'], PHP_URL_PATH)) !== false ? 'active' : '';
+            $classes = "block p-2 rounded-lg hover:bg-[var(--border-color)] $active";
             if ($is_mobile && $label === 'Cerrar Sesión') {
                 $classes .= " bg-[var(--error-color)] text-white mt-4";
             }
@@ -96,7 +100,7 @@ function generate_menu_items($items, $current_page, $rol_actual, $permisos, $is_
 }
 ?>
 
-<!-- Versión Desktop (visible en pantallas grandes) -->
+<!-- Sidebar (desktop) -->
 <aside class="sidebar hidden lg:block">
     <div class="flex items-center gap-3 mb-8">
         <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
@@ -112,96 +116,171 @@ function generate_menu_items($items, $current_page, $rol_actual, $permisos, $is_
     </nav>
 </aside>
 
-<!-- Botón Hamburguesa -->
-<div class="lg:hidden fixed top-4 left-4 z-40">
-    <button class="hamburger" title="Abrir menú" aria-label="Abrir menú">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<!-- Botón hamburguesa (mobile) -->
+<div class="lg:hidden fixed top-4 left-4 z-50">
+    <button id="hamburger-btn" class="hamburger bg-white p-2 rounded-lg shadow-md border" aria-label="Abrir menú" type="button">
+        <svg class="w-6 h-6 transition-transform text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
     </button>
 </div>
 
-<!-- Menú Móvil -->
-<div id="mobile-menu" class="mobile-menu lg:hidden">
-    <div class="p-6 pt-16 relative">
-        <button class="absolute top-4 right-4 p-2 close-menu" aria-label="Cerrar menú">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-        </button>
-        <!-- Contenido -->
-        <div class="flex items-center gap-3 mb-8">
-            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
-                <img src="<?php echo BASE_URL; ?>img/sigam_transparente.png" alt="Logo SIGAM" class="w-10 h-10 object-contain">
+<!-- Menú móvil -->
+<div id="mobile-menu" class="mobile-menu lg:hidden fixed inset-0 z-40 transform -translate-x-full transition-transform duration-300 ease-in-out">
+    <div class="bg-white h-full w-80 max-w-sm shadow-lg">
+        <div class="p-6 pt-16 relative h-full overflow-y-auto">
+            <button id="close-menu-btn" class="absolute top-4 right-4 p-2 close-menu hover:bg-gray-100 rounded-lg" aria-label="Cerrar menú" type="button">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
+                    <img src="<?php echo BASE_URL; ?>img/sigam_transparente.png" alt="Logo SIGAM" class="w-10 h-10 object-contain">
+                </div>
+                <h2 class="text-lg font-bold text-[var(--primary-color)]">SIGAM</h2>
             </div>
-            <h2 class="text-lg font-bold text-[var(--primary-color)]">SIGAM</h2>
+            <p class="text-xs opacity-90 mb-6">Sistema Integral de Gestión Administrativa</p>
+            <nav>
+                <ul class="space-y-2">
+                    <?php echo generate_menu_items($menu_items, $current_page, $_SESSION['rol'], $permisos, true); ?>
+                </ul>
+            </nav>
         </div>
-        <p class="text-xs opacity-90 mb-6">Sistema Integral de Gestión Administrativa</p>
-        <nav>
-            <ul class="space-y-2">
-                <?php echo generate_menu_items($menu_items, $current_page, $_SESSION['rol'], $permisos, true); ?>
-            </ul>
-        </nav>
     </div>
 </div>
 
 <!-- Overlay -->
-<div class="menu-overlay"></div>
+<div id="menu-overlay" class="menu-overlay fixed inset-0 bg-black bg-opacity-50 z-30 opacity-0 invisible transition-all duration-300 ease-in-out"></div>
 
+<!-- Estilos CSS adicionales -->
 <style>
-    .mobile-menu {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: white;
-        z-index: 30;
-    }
-    .mobile-menu.active {
-        display: block;
-    }
-    .menu-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 20;
-    }
-    .menu-overlay.active {
-        display: block;
-    }
-    .active {
-        background-color: var(--primary-color);
-        color: white;
-        font-weight: bold;
-    }
+/* Estilos para el menú móvil */
+.mobile-menu.active {
+    transform: translateX(0);
+}
+
+.menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.hamburger.is-active svg {
+    transform: rotate(90deg);
+}
+
+body.menu-open {
+    overflow: hidden;
+}
 </style>
 
+<!-- Script de control del menú mejorado -->
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const hamburger = document.querySelector('.hamburger');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const closeMenu = document.querySelector('.close-menu');
-        const overlay = document.querySelector('.menu-overlay');
+// Función para inicializar el menú
+function initializeHamburgerMenu() {
+    console.log('Inicializando menú hamburguesa...');
+    
+    // Seleccionar elementos
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const closeMenuBtn = document.getElementById('close-menu-btn');
+    const overlay = document.getElementById('menu-overlay');
+    const body = document.body;
 
-        if (hamburger && mobileMenu && closeMenu && overlay) {
-            hamburger.addEventListener('click', () => {
-                mobileMenu.classList.add('active');
-                overlay.classList.add('active');
-            });
-            closeMenu.addEventListener('click', () => {
-                mobileMenu.classList.remove('active');
-                overlay.classList.remove('active');
-            });
-            overlay.addEventListener('click', () => {
-                mobileMenu.classList.remove('active');
-                overlay.classList.remove('active');
-            });
-        }
+    // Verificar que todos los elementos existen
+    if (!hamburgerBtn) {
+        console.error('Botón hamburguesa no encontrado');
+        return false;
+    }
+    if (!mobileMenu) {
+        console.error('Menú móvil no encontrado');
+        return false;
+    }
+    if (!closeMenuBtn) {
+        console.error('Botón cerrar no encontrado');
+        return false;
+    }
+    if (!overlay) {
+        console.error('Overlay no encontrado');
+        return false;
+    }
+
+    console.log('Todos los elementos encontrados, configurando eventos...');
+
+    // Función para abrir el menú
+    function openMenu() {
+        console.log('Abriendo menú...');
+        mobileMenu.classList.add('active');
+        overlay.classList.add('active');
+        hamburgerBtn.classList.add('is-active');
+        body.classList.add('menu-open');
+    }
+
+    // Función para cerrar el menú
+    function closeMenu() {
+        console.log('Cerrando menú...');
+        mobileMenu.classList.remove('active');
+        overlay.classList.remove('active');
+        hamburgerBtn.classList.remove('is-active');
+        body.classList.remove('menu-open');
+    }
+
+    // Remover event listeners existentes para evitar duplicados
+    const newHamburgerBtn = hamburgerBtn.cloneNode(true);
+    const newCloseMenuBtn = closeMenuBtn.cloneNode(true);
+    const newOverlay = overlay.cloneNode(true);
+    
+    hamburgerBtn.parentNode.replaceChild(newHamburgerBtn, hamburgerBtn);
+    closeMenuBtn.parentNode.replaceChild(newCloseMenuBtn, closeMenuBtn);
+    overlay.parentNode.replaceChild(newOverlay, overlay);
+
+    // Event listeners en los nuevos elementos
+    newHamburgerBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Click en hamburguesa');
+        openMenu();
     });
+
+    newCloseMenuBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Click en cerrar');
+        closeMenu();
+    });
+
+    newOverlay.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Click en overlay');
+        closeMenu();
+    });
+
+    // Cerrar con tecla Escape
+    function handleEscape(e) {
+        if (e.key === 'Escape') {
+            closeMenu();
+        }
+    }
+    
+    // Remover listener anterior si existe
+    document.removeEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleEscape);
+
+    console.log('Menú hamburguesa inicializado correctamente');
+    return true;
+}
+
+// Intentar inicializar inmediatamente
+if (document.readyState === 'loading') {
+    // DOM aún cargando
+    document.addEventListener('DOMContentLoaded', initializeHamburgerMenu);
+} else {
+    // DOM ya cargado
+    setTimeout(initializeHamburgerMenu, 100);
+}
+
+// También intentar cuando la ventana se carga completamente
+window.addEventListener('load', function() {
+    setTimeout(initializeHamburgerMenu, 200);
+});
 </script>

@@ -9,6 +9,8 @@ let tableData = [];
 function cargarDatos() {
     const trimestre = document.getElementById("trimestre").value;
     const anio = document.getElementById("ejercicio_fiscal").value;
+    const clave_logia = document.getElementById("clave_logia").value;
+
     console.log("Enviando solicitud con:", { trimestre, anio }); // Depuración
 
     if (!trimestre || !anio) {
@@ -16,7 +18,7 @@ function cargarDatos() {
         return;
     }
 
-    fetch(`../datos-api/?trimestre=${trimestre}&anio=${anio}`)
+    fetch(`../datos-api/?trimestre=${trimestre}&anio=${anio}&clave=${clave_logia}`)
         .then(res => {
             console.log("Estado HTTP:", res.status, res.statusText); // Depuración
             if (!res.ok) {
@@ -89,49 +91,43 @@ function resetearFiltros() {
 function exportarExcel() {
     const trimestre = document.getElementById("trimestre").value;
     const anio = document.getElementById("ejercicio_fiscal").value;
+    const clave_logia = document.getElementById('clave_logia').value;
     
     if (!trimestre || !anio) {
         mostrarToast("Seleccione trimestre y año", "error");
         return;
     }
+    if (!clave_logia)
+    {
+        mostrarToast("Algo falló con su logia", "error");
+    }
     
     // Redirigir a la URL que genera el Excel
-    window.location.href = `../excel_pdf/reportesExcel/generar_reporte_excel.php?trimestre=${trimestre}&anio=${anio}`;
+    window.location.href = `../excel_pdf/reportesExcel/generar_reporte_excel.php?trimestre=${trimestre}&anio=${anio}&clave_logia=${clave_logia}`;
     
     // Opcional: Mostrar mensaje de que se está generando
     mostrarToast("Generando reporte Excel...", "info");
 }   
 
 function exportarPdf() {
-    if (!tableData.length) {
-        mostrarToast("No hay datos para exportar", "error");
+    const trimestre = document.getElementById("trimestre").value;
+    const anio = document.getElementById("ejercicio_fiscal").value;
+    const clave_logia = document.getElementById("clave_logia").value;
+    
+    if (!trimestre || !anio) {
+        mostrarToast("Seleccione trimestre y año", "error");
         return;
     }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.text("Relación de Pagos - Gran Logia del Estado de Guerrero", 14, 20);
-    doc.text(`Trimestre: ${document.getElementById("trimestre").value} - Año: ${document.getElementById("ejercicio_fiscal").value}`, 14, 30);
-    doc.autoTable({
-        head: [['ID', 'Nombre', 'Grado', 'Logia', 'Capitas', 'Seguro', 'Iniciación', 'Afiliación', 'Exaltación', 'Regularización', 'total']],
-        body: tableData.map(row => [
-            row.id_hermano,
-            row.nombre_hermano,
-            row.grado,
-            row.logia,
-            `$${parseFloat(row.capitas || 0).toFixed(2)}`,
-            `$${parseFloat(row.seguro || 0).toFixed(2)}`,
-            `$${parseFloat(row.iniciacion || 0).toFixed(2)}`,
-            `$${parseFloat(row.afiliacion || 0).toFixed(2)}`,
-            `$${parseFloat(row.exaltacion || 0).toFixed(2)}`,
-            `$${parseFloat(row.afiliacion_regularizacion || 0).toFixed(2)}`,
-            `$${parseFloat(row.total || 0).toFixed(2)}`
-        ]),
-        startY: 40,
-        theme: 'grid',
-        styles: { fontSize: 8 }
-    });
-    doc.save(`Reporte_Tesoreria_${document.getElementById("trimestre").value}_${document.getElementById("ejercicio_fiscal").value}.pdf`);
-    mostrarToast("Reporte exportado a PDF", "success");
+        if (!clave_logia)
+    {
+        mostrarToast("Algo falló con su logia", "error");
+    }
+    
+    // Redirigir a la URL que genera el Excel
+    window.location.href = `../excel_pdf/reportePDF/generar_reporte_pdf.php?trimestre=${trimestre}&anio=${anio}&clave_logia=${clave_logia}`;
+    
+    // Opcional: Mostrar mensaje de que se está generando
+    mostrarToast("Generando reporte PDF...", "info");
 }
 
 function mostrarToast(mensaje, tipo) {

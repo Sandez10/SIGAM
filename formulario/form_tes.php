@@ -101,10 +101,6 @@ if (isset($_GET['id'])) {
           <p class="text-sm text-[var(--text-light)]">Gran Logia del Estado de Guerrero</p>
         </div>
         <div class="flex gap-3">
-          <a href="../principal.php" class="btn btn-secondary" title="Volver al inicio">
-            <svg class="inline-block w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            Regresar
-          </a>
         </div>
       </header>
 
@@ -154,18 +150,53 @@ if (isset($_GET['id'])) {
                     </option>
                     <?php endforeach; ?>
                 </select>
-                            </div>
+                </div>
                 <div class="group relative mb-4">
                     <label for="grado" class="block mb-1 font-medium">Grado Masónico</label>
                     <input type="text" id="grado" name="grado" class="w-full glass-card" readonly>
                 </div>
-                  <!-- Alterar la tabla para que se cambie el estado en la tabla Registros 
+
                 <div class="group relative">
-                    <label for="estado" class="block mb-1 font-medium">Estado Administrativo</label>
-                    <input type="text" id="estado" name="estado" class="w-full glass-card" readonly>
+                  <label for="estado" class="block mb-1 font-medium">Estado Administrativo</label>
+                  <select id="estado" name="estado" class="w-full glass-card">
+                    <option value="">Selecciona el estado...</option>
+                    <option value="1">Activo</option>
+                    <option value="0">Baja</option>
+                    <option value="3">Desplomado</option>
+                    <option value="2">Libre de orden</option>
+                  </select>
                 </div>
-             Campo Grado como input de texto readonly -->
                 <div class="group relative">
+                  <label for="inciacion" class="block mb-1 font-medium">Iniciación</label>
+                  <select id="iniciacion" name="iniciacion" class="w-full glass-card">
+                    <option value="">Seleccione la cantidad de iniación</option>
+                    <option value="350">$350.00</option>
+                  </select>
+                </div>
+                <div class="group relative">
+                  <label for="capitas" class="block mb-1 font-medium">Capitas</label>
+                  <select id="capitas" name="capitas" class="w-full glass-card">
+                    <option value="">Seleccione la cantidad de Capitas</option>
+                    <option value="100">$100.00</option>
+                    <option value="200">$200.00</option>
+                    <option value="300">$300.00</option>                    
+                  </select>
+                </div>
+                <div class="group relative">
+                  <label for="Salario" class="block mb-1 font-medium">Salario</label>
+                  <select id="iniciacion" name="iniciacion" class="w-full glass-card">
+                    <option value="">Seleccione el Salario</option>
+                    <option value="450">$450.00</option>
+                  </select>
+                </div>
+                <div class="group relative">
+                  <label for="Seguro" class="block mb-1 font-medium">Seguro Mas.˙.</label>
+                  <select id="seguro" name="seguro" class="w-full glass-card">
+                    <option value="">Seleccione la cantidad para el seguro</option>
+                    <option value="30">$30.00</option>
+                  </select>
+                </div>
+<!--                <div class="group relative">
                   <label for="oriente" class="block mb-1 font-medium">Iniciación</label>
                   <input type="number" id ="iniciacion" name="iniciacion" class="w-full glass-card" placeholder="Ingresar la cantidad de capitas" required />
                   <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
@@ -175,21 +206,28 @@ if (isset($_GET['id'])) {
                   <input type="number" id ="capitas" name="capitas" class="w-full glass-card" placeholder="Ingresar la cantidad de capitas" required />
                   <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
                 </div>
+              <div id="grupo_aumento_salario" class="group relative hidden">
+                <label for="aumento_salario" class="block mb-1 font-medium">Aumento de Salario</label>
+                <input type="number" id="aumento_salario" name="aumento_salario" class="w-full glass-card" placeholder="Ingresar la cantidad de Aumento de salario" />
+                <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
+              </div>
+
                 <div class="group relative">
                   <label for="oriente" class="block mb-1 font-medium">Seguro Mas.˙.</label>
                   <input id="seguro" type="number" name="seguro" class="w-full glass-card" placeholder="Ingresa el cantidad de Seguro" required />
                   <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
-                </div>
+                </div>-->
                 <div class="group relative">
                   <label for="afiliacion" class="block mb-1 font-medium">Afiliación</label>
                   <input id="afiliacion" type="number" name="afiliacion" class="w-full glass-card" placeholder="Ingresa la cantidad de Afiliación" required />
                   <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
                 </div>
-                <div class="group relative">
-                  <label for="exaltacion" class="block mb-1 font-medium">Exaltación</label>
-                  <input id="exaltacion" type="number" name="exaltacion" class="w-full glass-card" placeholder="Ingresa la cantidad de Exaltacion" required />
-                  <p class="error-message hidden" id="oriente-error">Este campo es obligatorio</p>
-                </div>
+<div id="grupo_exaltacion" class="group relative hidden">
+  <label for="exaltacion" class="block mb-1 font-medium">Exaltación</label>
+  <input type="date" id="exaltacion" name="exaltacion" class="w-full glass-card" />
+  <p class="error-message hidden" id="exaltacion-error">Este campo es obligatorio</p>
+</div>
+
               </div>
             </div>
           </div>
@@ -238,7 +276,7 @@ if (isset($_GET['id'])) {
             direction: "asc"
         },
         searchField: ['text'],
-        dropdownParent: 'body', // Esto ayuda con el z-index
+        dropdownParent: 'body', 
         render: {
             option: function(data, escape) {
                 return `<div class="flex items-center p-2 hover:bg-blue-600">${escape(data.text)}</div>`;
@@ -251,65 +289,94 @@ if (isset($_GET['id'])) {
             }
         },
         onInitialize: function() {
-            // Ajustar z-index del dropdown
             this.dropdown.classList.add('z-50');
         }
     });
 
-// Manejar cambio de hermano - Versión mejorada
-document.getElementById('id_hermano').addEventListener('change', function() {
-    const hermanoId = this.value;
-    const gradoInput = document.getElementById('grado');
-    const estadoInput = document.getElementById('estado');
-    
-    if (hermanoId) {
-        // Buscar el hermano en los datos ya cargados
-        const hermanos = <?php echo json_encode($hermanos); ?>;
-        const hermanoSeleccionado = hermanos.find(h => h.id == hermanoId);
-        
-        if (hermanoSeleccionado) {
-            // Actualizar grado masónico (ya formateado desde PHP)
-            gradoInput.value = hermanoSeleccionado.grado_textual || '';
-            
-            // Actualizar estado administrativo
-            estadoInput.value = hermanoSeleccionado.estado_textual || '';
-            
-            // Opcional: Actualizar URL para compartir el enlace
+    // Manejar cambio de hermano
+    document.getElementById('id_hermano').addEventListener('change', function() {
+        const hermanoId = this.value;
+        const gradoInput = document.getElementById('grado');
+
+        if (hermanoId) {
+            const hermanos = <?php echo json_encode($hermanos); ?>;
+            const hermanoSeleccionado = hermanos.find(h => h.id == hermanoId);
+
+            if (hermanoSeleccionado) {
+                gradoInput.value = hermanoSeleccionado.grado_textual || '';
+
+                const estadoInput = document.getElementById('estado');
+                const estadoTextual = (hermanoSeleccionado.estado_textual || '').toLowerCase();
+
+                let estadoValue = '';
+                switch (estadoTextual) {
+                  case 'activo': estadoValue = '1'; break;
+                  case 'baja': estadoValue = '0'; break;
+                  case 'libre de la orden':
+                  case 'libre de orden': estadoValue = '2'; break;
+                  case 'desplomado': estadoValue = '3'; break;
+                }
+
+                estadoInput.value = estadoValue;
+
+                // NUEVO BLOQUE: Mostrar u ocultar el campo "Aumento de Salario"
+                const grupoAumento = document.getElementById('grupo_aumento_salario');
+                const aumentoInput = document.getElementById('aumento_salario');
+                const grado = (hermanoSeleccionado.grado_textual || '').toLowerCase();
+
+                if (grupoAumento && aumentoInput) {
+                    if (grado === 'aprendiz') {
+                        grupoAumento.classList.remove('hidden');
+                        aumentoInput.disabled = false;
+                    } else {
+                        grupoAumento.classList.add('hidden');
+                        aumentoInput.value = '';
+                        aumentoInput.disabled = true;
+                    }
+                }
+                // Mostrar u ocultar el campo "Exaltación"
+                const grupoExaltacion = document.getElementById('grupo_exaltacion');
+                const exaltacionInput = document.getElementById('exaltacion');
+
+                if (grupoExaltacion && exaltacionInput) {
+                    if (grado === 'compañero') {
+                        grupoExaltacion.classList.remove('hidden');
+                        exaltacionInput.disabled = false;
+                    } else {
+                        grupoExaltacion.classList.add('hidden');
+                        exaltacionInput.value = '';
+                        exaltacionInput.disabled = true;
+                    }
+                }
+                // Actualizar URL
+                const nuevaURL = new URL(window.location.href);
+                nuevaURL.searchParams.set('id', hermanoId);
+                window.history.pushState({}, '', nuevaURL);
+            }
+        } else {
+            gradoInput.value = '';
+            estadoInput.value = '';
+
             const nuevaURL = new URL(window.location.href);
-            nuevaURL.searchParams.set('id', hermanoId);
+            nuevaURL.searchParams.delete('id');
             window.history.pushState({}, '', nuevaURL);
         }
-    } else {
-        // Limpiar campos si no se selecciona hermano
-        gradoInput.value = '';
-        estadoInput.value = '';
-        
-        // Opcional: Limpiar parámetro de URL
-        const nuevaURL = new URL(window.location.href);
-        nuevaURL.searchParams.delete('id');
-        window.history.pushState({}, '', nuevaURL);
-    }
-    
-    // Opcional: Disparar evento personalizado
-    document.dispatchEvent(new CustomEvent('hermanoCambiado', {
-        detail: { hermanoId, hermano: hermanoSeleccionado }
-    }));
-});
 
-// Opcional: Cargar hermano desde parámetro URL al inicio
-document.addEventListener('DOMContentLoaded', function() {
+        document.dispatchEvent(new CustomEvent('hermanoCambiado', {
+            detail: { hermanoId, hermano: hermanoSeleccionado }
+        }));
+    });
+
+    // Cargar hermano desde URL al inicio
     const urlParams = new URLSearchParams(window.location.search);
     const idFromUrl = urlParams.get('id');
-    
     if (idFromUrl) {
         const select = document.getElementById('id_hermano');
         select.value = idFromUrl;
         select.dispatchEvent(new Event('change'));
     }
-});
-});
-</script>
-  <script>
+  });
+
   <?php if (isset($toast)): ?>
     document.addEventListener('DOMContentLoaded', function() {
       Swal.fire({
@@ -322,5 +389,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   <?php endif; ?>
 </script>
+
 </body>
 </html>

@@ -1,6 +1,6 @@
 <?php
 require_once '../sesiones_conexiones/sesion_config.php'; 
-require_once '../sesiones_conexiones/logia.php'; 
+require_once '../sesiones_conexiones/logia.php';
 require_once '../database/conexion.php';
 
 $database = Database::getInstance();
@@ -23,8 +23,7 @@ if ($modo_edicion) {
     $id_registro = intval($_GET['id']);
     
     // Obtener datos del registro para edición
-    $stmt = $connection->prepare("
-        SELECT r.*, im.*, c.tipo_cargo, c.es_dignatario,
+    $stmt = $connection->prepare("SELECT r.*, im.*, c.tipo_cargo, c.es_dignatario,
                GROUP_CONCAT(pm.fecha) as past_master_fechas,
                pm.periodo
         FROM registros r
@@ -49,7 +48,9 @@ if ($modo_edicion) {
 }
 
 // Obtener lista de registros para el selector
-$stmt_lista = $connection->prepare("SELECT id, nombre_completo FROM registros ORDER BY nombre_completo");
+$stmt_lista = $connection->prepare("SELECT id, nombre_completo, clave_logia FROM registros WHERE clave_logia = ? ORDER BY nombre_completo");
+$stmt_lista->bind_param("i", $clave_logia);
+//$stmt_lista = $connection->prepare("SELECT id, nombre_completo FROM registros ORDER BY nombre_completo");
 $stmt_lista->execute();
 $lista_registros = $stmt_lista->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -119,7 +120,6 @@ if (!isset($_SESSION['csrf_token'])) {
   <div class="container">
   <?php include '../configuracion/panel_menu.php'; ?>
 <!-- Overlay -->
-<div class="menu-overlay"></div>
 
 
     <!-- Main Content -->
@@ -321,6 +321,35 @@ if (!isset($_SESSION['csrf_token'])) {
                   
                   <p class="error-message hidden" id="foto-error">Error en la imagen</p>
                 </div>
+                <div class="group relative">
+                  <label for="observaciones" class="block mb-1 font-medium">Observaciones</label>
+                  <textarea id="observaciones" name="observaciones" class="w-full glass-card" rows="4" placeholder="Agregar observaciones..."><?php echo $modo_edicion ? htmlspecialchars($registro_actual['observaciones']) : ''; ?></textarea>
+                </div>
+                <div class="group relative">
+  <label class="block mb-1 font-medium">Firma Digital</label>
+
+  <button type="button" onclick="abrirModalFirma()" class="btn btn-primary text-sm">Agregar Firma</button>
+  <!-- Campo oculto donde se guardará la firma en base64 -->
+  <input type="hidden" name="firma_base64" id="firma_base64">
+
+  <!-- Vista previa de firma -->
+  <div id="firmaPreview" class="mt-2 hidden">
+    <p class="text-sm mb-1">Vista previa:</p>
+    <img id="firmaPreviewImg" src="" class="w-40 border rounded" alt="Firma digital">
+  </div>
+
+  <?php if ($modo_edicion && !empty($registro_actual['firma_path'])): ?>
+    <div class="mt-4">
+      <p class="text-sm">Firma actual:</p>
+      <img src="../firmas/<?php echo htmlspecialchars($registro_actual['firma_path']); ?>" alt="Firma actual" class="w-40 border rounded">
+      <label class="inline-flex items-center mt-2">
+        <input type="checkbox" name="eliminar_firma" value="1" class="mr-2">
+        <span class="text-sm">Eliminar firma actual</span>
+      </label>
+    </div>
+  <?php endif; ?>
+</div>
+
               </div>
             </div>
           </div>
@@ -473,6 +502,60 @@ if (!isset($_SESSION['csrf_token'])) {
       <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
     </main>
   </div>
+<div id="modalFirma" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+  <div class="w-full h-full flex flex-col justify-between bg-white p-4">
+    <h2 class="text-xl font-bold text-center mb-2">Firme en el área inferior</h2>
+    <canvas id="firmaCanvas" class="border rounded-md flex-grow bg-white"></canvas>
+
+    <div class="flex justify-between mt-4 gap-2">
+      <button onclick="limpiarFirma()" class="btn btn-secondary"> Limpiar</button>
+      <button onclick="cerrarModalFirma()" class="btn btn-success"> Guardar Firma</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.6/dist/signature_pad.umd.min.js"></script>
+<script>
+let signaturePad;
+let canvas;
+
+function abrirModalFirma() {
+  const modal = document.getElementById('modalFirma');
+  modal.classList.remove('hidden');
+
+  canvas = document.getElementById('firmaCanvas');
+  ajustarCanvasAlDispositivo();
+
+  signaturePad = new SignaturePad(canvas);
+}
+
+function cerrarModalFirma() {
+  const modal = document.getElementById('modalFirma');
+
+  if (!signaturePad.isEmpty()) {
+    const base64 = signaturePad.toDataURL('image/png');
+    document.getElementById('firma_base64').value = base64;
+
+    // Mostrar vista previa
+    const imgPreview = document.getElementById('firmaPreviewImg');
+    imgPreview.src = base64;
+    document.getElementById('firmaPreview').classList.remove('hidden');
+  }
+
+  signaturePad.clear();
+  modal.classList.add('hidden');
+}
+
+function limpiarFirma() {
+  signaturePad.clear();
+}
+
+function ajustarCanvasAlDispositivo() {
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = canvas.offsetHeight * ratio;
+  canvas.getContext("2d").scale(ratio, ratio);
+}
+</script>
 
   <script>
     // Mostrar toast si existe

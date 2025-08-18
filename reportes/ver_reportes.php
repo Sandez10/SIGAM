@@ -32,7 +32,7 @@ if ($result) {
     $anios_disponibles = [date('Y')]; // Año actual por defecto
 }
 
-// Obtener lista de hermanos (opcional, si se usa en otros filtros o validaciones)
+// Obtener lista de hermanos
 $hermanos = [];
 if ($logia_registro) {
     $stmt = $conn->prepare("SELECT tes.id_hermano, tes.nombre_hermano 
@@ -78,6 +78,14 @@ function generarMenu($rol, $permisos) {
         $html .= '<li><a href="' . $item['url'] . '" class="block p-2 rounded-lg hover:bg-[var(--border-color)] ' . $extra . '">' . $item['label'] . '</a></li>';
     }
     return $html;
+}
+// Verificar si el rol es admin
+if ($_SESSION['rol'] !== 'superadmin') {
+    echo "<script>
+        alert('No tienes permiso para acceder a esta página.');
+        history.back();
+    </script>";
+    exit();
 }
 ?>
 
@@ -155,8 +163,6 @@ function generarMenu($rol, $permisos) {
 
 <!-- Overlay -->
 <div class="menu-overlay"></div>
-
-
     <!-- Main Content -->
     <main class="content">
       <!-- Header -->
@@ -238,6 +244,7 @@ function generarMenu($rol, $permisos) {
             </select>
             <span class="tooltip top-[-2.5rem] left-1/2 transform -translate-x-1/2">Seleccione el año del reporte</span>
           </div>
+          <input type="hidden" id="clave_logia" name="clave_logia" value="<?php echo !empty($clave_logia) ? $clave_logia : ''; ?>">
         </div>
         <div class="flex justify-end mb-4">
           <button id="resetFilters" class="btn btn-secondary" aria-label="Restablecer filtros">

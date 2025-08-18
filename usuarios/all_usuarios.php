@@ -121,10 +121,6 @@ if ($_SESSION['rol'] !== 'superadmin') {
             <svg class="inline-block w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Nuevo Usuario
           </button>
-          <a href="../plataforma/principal.php" class="btn btn-secondary" title="Volver al inicio">
-            <svg class="inline-block w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            Regresar
-          </a>
         </div>
       </header>
 

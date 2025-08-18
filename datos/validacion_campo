@@ -1,0 +1,36 @@
+<?php
+require_once '../database/conexion.php'; // Asegúrate de que la ruta sea correcta
+header('Content-Type: application/json');
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+    exit();
+}
+
+$idHermano = isset($_POST['id_hermano']) ? intval($_POST['id_hermano']) : null;
+
+if (!$idHermano) {
+    echo json_encode(['success' => false, 'message' => 'ID de hermano no válido']);
+    exit();
+}
+
+$db = Database::getInstance();
+$conn = $db->getConnection();
+
+$query = "SELECT im.grado_masonico
+    FROM informacion_masonica im
+    INNER JOIN tesoreria tes ON tes.id_hermano = im.id_registro
+    WHERE tes.id_hermano = ?";
+
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $idHermano);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($row = $result->fetch_assoc()) {
+    echo json_encode(['success' => true, 'grado_masonico' => $row['grado_masonico']]);
+} else {
+    echo json_encode(['success' => false, 'message' => 'No se encontró información del hermano.']);
+}
+
+$stmt->close();

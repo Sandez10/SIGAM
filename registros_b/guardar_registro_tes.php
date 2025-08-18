@@ -53,6 +53,7 @@ try {
     $clave_logia = procesarDatos($_POST['clave_logia'] ?? '');
     $id_hermano = procesarDatos($_POST['id_hermano'] ?? '', 'int');
     $grado = procesarDatos($_POST['grado'] ?? '');
+    $estado = procesarDatos($_POST['estado'] ?? '', 'int');    
     // Procesar valores numéricos
     $iniciacion = procesarDatos($_POST['iniciacion'] ?? '', 'float');
     $capitas = procesarDatos($_POST['capitas'] ?? '', 'float');
@@ -78,7 +79,6 @@ try {
         throw new Exception("No se pudo obtener el nombre del hermano.");
     }
 
-    // 8. Preparar consulta principal actualizada
 // 8. Preparar consulta principal actualizada
 $query = "INSERT INTO tesoreria (
     id_hermano, 
@@ -93,8 +93,9 @@ $query = "INSERT INTO tesoreria (
     exaltacion,
     fecha_registro, 
     usuario_registro,
-    oriente
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)";
+    oriente,
+    estado_hermano
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)";
 
 $stmt = $conn->prepare($query);
 if (!$stmt) {
@@ -104,7 +105,7 @@ if (!$stmt) {
 $usuario_registro = $_SESSION['user_id'];
 
 $stmt->bind_param(
-    "issssddddiss",  // Nota: he quitado una 'd' y un 's' al final (ahora 12 caracteres)
+    "issssddddissi",
     $id_hermano,
     $nombre_hermano,
     $grado,
@@ -116,7 +117,8 @@ $stmt->bind_param(
     $afiliacion,
     $exaltacion,
     $usuario_registro,
-    $oriente
+    $oriente,
+    $estado
 );
 
     if (!$stmt->execute()) {
@@ -126,6 +128,20 @@ $stmt->bind_param(
     if ($stmt->affected_rows === 0) {
         throw new Exception("No se insertó ningún registro.");
     }
+// 9. Actualizar el campo estado_hermano en la tabla registros
+$updateEstado = $conn->prepare("UPDATE registros SET estado_hermano = ? WHERE id = ?");
+if (!$updateEstado) {
+    throw new Exception("Error en prepare del UPDATE: " . $conn->error);
+}
+
+$updateEstado->bind_param("ii", $estado, $id_hermano);
+
+if (!$updateEstado->execute()) {
+    throw new Exception("Error al actualizar el estado del hermano: " . $updateEstado->error);
+}
+
+$updateEstado->close();
+
     
     // Éxito - redireccionar con mensaje
     $_SESSION['success_message'] = 'El registro se guardó con éxito';

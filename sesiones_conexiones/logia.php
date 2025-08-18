@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id']) || !is_numeric($_SESSION['user_id'])) {
     header("Location: ../");
     exit;
 }
-// 5. Función con mayor seguridad y manejo de errores<?php
+// 5. Función con mayor seguridad y manejo de errores
 function obtenerDatosLogia(): ?array {
     try {
 

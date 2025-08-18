@@ -93,17 +93,42 @@ try {
     $numero_contacto = sanitizeInput($_POST['numero_contacto']);
     $numero_emergencia = sanitizeInput($_POST['numero_emergencia']);
     $correo_electronico = sanitizeInput($_POST['correo_electronico']);
+    $observaciones = sanitizeInput($_POST['observaciones']);
+$firmaPath = null;
+
+if (!empty($_POST['firma_base64'])) {
+    $firma_base64 = $_POST['firma_base64'];
+
+    // Validar que venga con prefijo base64 estándar
+    if (strpos($firma_base64, 'data:image/png;base64,') === 0) {
+        $firma_base64 = str_replace('data:image/png;base64,', '', $firma_base64);
+    }
+
+    // Limpieza adicional
+    $firma_base64 = str_replace(' ', '+', $firma_base64);
+
+    // Crear nombre único
+    $nombreFirma = 'firma_' . time() . '_' . rand(1000,9999) . '.png';
+    $rutaFirma = __DIR__ . '/../firmas/' . $nombreFirma;
+
+    // Guardar archivo en /firmas
+    if (file_put_contents($rutaFirma, base64_decode($firma_base64))) {
+        $firmaPath = $nombreFirma;
+    } else {
+        error_log("⚠️ No se pudo guardar la firma PNG en: $rutaFirma");
+    }
+}
+
 
     // Insertar datos personales
-    $stmt = $conn->prepare("INSERT INTO registros (
-        nombre_completo, domicilio, nacionalidad, estado_civil,
+    $stmt = $conn->prepare("INSERT INTO registros (nombre_completo, domicilio, nacionalidad, estado_civil,
         ocupacion, religion, numero_contacto, numero_emergencia,
-        correo_electronico, fotografia, logia, clave_logia, oriente, estado_hermano
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        correo_electronico, fotografia, logia, clave_logia, oriente, estado_hermano, observaciones, firma_path) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     $null = NULL;
     $stmt->bind_param(
-        "sssssssssbsssi",
+        "sssssssssbsssiss",
         $nombre_completo,
         $domicilio,
         $nacionalidad,
@@ -117,7 +142,10 @@ try {
         $logia,
         $clave_logia,
         $oriente,
-        $estado_hermano
+        $estado_hermano,
+        $observaciones,
+        $firmaPath
+
     );
 
     if ($fotoBinaria !== null) {

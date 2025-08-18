@@ -8,15 +8,19 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+$db = Database::getInstance();
+$conn = $db->getConnection();
 
 // Obtener parámetros
 $trimestre = isset($_GET['trimestre']) ? intval($_GET['trimestre']) : null;
 $anio = isset($_GET['anio']) ? intval($_GET['anio']) : null;
+$clave_logia =  isset($_GET['clave_logia']) ? intval($_GET['clave_logia']) : null;
 
 // Validar parámetros
 if (!$trimestre || !$anio) {
     die("Trimestre y año son obligatorios");
 }
+
 
 // Configurar meses por trimestre
 $meses = [
@@ -43,6 +47,23 @@ $spreadsheet->getProperties()
 $sheet1 = $spreadsheet->getActiveSheet();
 $sheet1->setTitle('Concentrado General');
 
+// --- Datos de logia y oriente ---
+$queryLogia = "SELECT logia, oriente FROM logias WHERE clave_logia = ? LIMIT 1";
+$stmtLogia = $conn->prepare($queryLogia);
+$stmtLogia->bind_param("s", $clave_logia);
+$stmtLogia->execute();
+$infoLogia = $stmtLogia->get_result()->fetch_assoc() ?: [];
+
+$nombreLogia = $infoLogia['logia'] ?? 'Logia no Disponible';
+$oriente     = $infoLogia['oriente'] ?? 'Zihuatanejo, Gro.';
+
+// Fecha en español tipo: "25 julio 2025"
+$mesesEs = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+$hoy = new DateTime(); 
+$fechaEV = $hoy->format('j') . ' ' . $mesesEs[$hoy->format('n') - 1] . ' ' . $hoy->format('Y') . ' E.\V.';
+
+
+
 // 1. ENCABEZADO DEL REPORTE (Hoja 1)
 $sheet1->mergeCells('A1:I1');
 $sheet1->setCellValue('A1', "A.\G.\D.\G.\A.\D.\U.");
@@ -59,17 +80,19 @@ $sheet1->setCellValue('A3', "Conferencia de Grandes Logias Regulares de la R.\E.
 $sheet1->getStyle('A3')->getFont()->setBold(true);
 $sheet1->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
+// <- aquí usamos los datos de la tabla logias
 $sheet1->mergeCells('A4:I4');
-$sheet1->setCellValue('A4', "Pres. Simb. Rito Juárez 101 - No. 12");
+$sheet1->setCellValue('A4', "Resp. Simb. {$nombreLogia}");
 $sheet1->getStyle('A4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 $sheet1->mergeCells('A5:I5');
-$sheet1->setCellValue('A5', "Oriente de Zihuatanejo, Gro. a 25 julio 2025 E.\V.");
+$sheet1->setCellValue('A5', "Oriente de {$oriente}, a {$fechaEV}");
 $sheet1->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
 $sheet1->mergeCells('A6:I6');
-$sheet1->setCellValue('A6', "Asunto: Informe de Tesorería del Trimestre $trimestre de $anio");
+$sheet1->setCellValue('A6', "Asunto: Informe de Tesorería del Trimestre {$trimestre} de {$anio}");
 $sheet1->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
 
 // 2. ENCABEZADOS DE COLUMNAS (Hoja 1)
 $sheet1->setCellValue('A8', 'No');
@@ -93,8 +116,6 @@ $headerStyle = [
 $sheet1->getStyle('A8:I8')->applyFromArray($headerStyle);
 
 // 3. OBTENER DATOS DE LA BASE DE DATOS (Hoja 1)
-$db = Database::getInstance();
-$conn = $db->getConnection();
 
 $mesInicio = sprintf("%02d", ($trimestre - 1) * 3 + 1);
 $mesFin = sprintf("%02d", $trimestre * 3);
@@ -114,11 +135,12 @@ $query = "SELECT
           JOIN informacion_masonica im ON r.id = im.id_registro
           WHERE YEAR(t.fecha_registro) = ?
           AND MONTH(t.fecha_registro) BETWEEN ? AND ?
+          AND t.clave_logia = ?
           GROUP BY r.id, r.nombre_completo, im.grado_masonico
           ORDER BY r.nombre_completo";
 
 $stmt = $conn->prepare($query);
-$stmt->bind_param("iii", $anio, $mesInicio, $mesFin);
+$stmt->bind_param("iiii", $anio, $mesInicio, $mesFin,$clave_logia);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -187,269 +209,308 @@ $sheet1->getColumnDimension('G')->setWidth(12);
 $sheet1->getColumnDimension('H')->setWidth(12);
 $sheet1->getColumnDimension('I')->setWidth(12);
 
-// ** Hoja 2: Reporte de Movimientos **
+$rowNumber += 2; // Espacio después de la tabla de totales
+
+// =============================
+// LISTADO DE HERMANOS DESPLOMADOS
+// =============================
+$sheet1->mergeCells("A{$rowNumber}:C{$rowNumber}");
+$sheet1->setCellValue("A{$rowNumber}", "Listado de los hermanos desplomados:");
+$sheet1->getStyle("A{$rowNumber}")->getFont()->setBold(true)->getColor()->setRGB('305496');
+$rowNumber++;
+
+$sheet1->setCellValue("A{$rowNumber}", "Nombre del hermano");
+$sheet1->setCellValue("C{$rowNumber}", "Grado masónico");
+$sheet1->getStyle("A{$rowNumber}:C{$rowNumber}")->getFont()->setBold(true);
+$sheet1->getStyle("A{$rowNumber}:C{$rowNumber}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+$rowNumber++;
+
+// Consulta hermanos desplomados
+$queryDesplomados = "SELECT r.nombre_completo, im.grado_masonico
+                     FROM registros r
+                     JOIN informacion_masonica im ON r.id = im.id_registro
+                     WHERE r.estado_hermano = 3 AND r.clave_logia = ?";
+$stmt = $conn->prepare($queryDesplomados);
+$stmt->bind_param("i", $clave_logia);
+$stmt->execute();
+$resultDesplomados = $stmt->get_result();
+
+$desplomadosCount = 0;
+while ($row = $resultDesplomados->fetch_assoc()) {
+    $sheet1->setCellValue("A{$rowNumber}", ++$desplomadosCount);
+    $sheet1->setCellValue("B{$rowNumber}", $row['nombre_completo']);
+    $sheet1->setCellValue("C{$rowNumber}", ucfirst($row['grado_masonico']));
+    $sheet1->getStyle("A{$rowNumber}:C{$rowNumber}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+    $rowNumber++;
+}
+
+if ($desplomadosCount < 3) {
+    for ($i = $desplomadosCount; $i < 3; $i++) {
+        $sheet1->setCellValue("A{$rowNumber}", $i + 1);
+        $sheet1->getStyle("A{$rowNumber}:C{$rowNumber}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $rowNumber++;
+    }
+}
+
+$rowNumber += 1; // Espacio
+
+// =============================
+// LISTADO DE HERMANOS DADOS DE BAJA
+// =============================
+$sheet1->mergeCells("A{$rowNumber}:C{$rowNumber}");
+$sheet1->setCellValue("A{$rowNumber}", "Listado de los hermanos dados de baja:");
+$sheet1->getStyle("A{$rowNumber}")->getFont()->setBold(true)->getColor()->setRGB('305496');
+$rowNumber++;
+
+$sheet1->setCellValue("A{$rowNumber}", "Nombre del hermano");
+$sheet1->setCellValue("C{$rowNumber}", "Grado masónico");
+$sheet1->getStyle("A{$rowNumber}:C{$rowNumber}")->getFont()->setBold(true);
+$sheet1->getStyle("A{$rowNumber}:C{$rowNumber}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+$rowNumber++;
+
+// Consulta hermanos dados de baja
+$queryBaja = "SELECT r.nombre_completo, im.grado_masonico
+              FROM registros r
+              JOIN informacion_masonica im ON r.id = im.id_registro
+              WHERE r.estado_hermano = 0 AND r.clave_logia = ?";
+$stmt = $conn->prepare($queryBaja);
+$stmt->bind_param("i", $clave_logia);
+$stmt->execute();
+$resultBaja = $stmt->get_result();
+
+$bajaCount = 0;
+while ($row = $resultBaja->fetch_assoc()) {
+    $sheet1->setCellValue("A{$rowNumber}", ++$bajaCount);
+    $sheet1->setCellValue("B{$rowNumber}", $row['nombre_completo']);
+    $sheet1->setCellValue("C{$rowNumber}", ucfirst($row['grado_masonico']));
+    $sheet1->getStyle("A{$rowNumber}:C{$rowNumber}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+    $rowNumber++;
+}
+
+if ($bajaCount < 3) {
+    for ($i = $bajaCount; $i < 3; $i++) {
+        $sheet1->setCellValue("A{$rowNumber}", $i + 1);
+        $sheet1->getStyle("A{$rowNumber}:C{$rowNumber}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $rowNumber++;
+    }
+}
+
+$rowNumber += 2; // Espacio antes de firmas
+
+// =============================
+// FIRMAS (con nombres desde BD)
+// =============================
+$queryFirmas = "SELECT nombre_tesorero, nombre_secretario
+                FROM tabla_tesorero_secretario
+                WHERE clave_logia = ? AND anio = ? AND trimestre = ?
+                LIMIT 1";
+$stmtFirmas = $conn->prepare($queryFirmas);
+$stmtFirmas->bind_param("iii", $clave_logia, $anio, $trimestre);
+$stmtFirmas->execute();
+$resFirmas = $stmtFirmas->get_result();
+$dataFirmas = $resFirmas->fetch_assoc();
+
+$nombreTesorero  = $dataFirmas['nombre_tesorero']  ?? 'V\. H\. __________________________';
+$nombreSecretario = $dataFirmas['nombre_secretario'] ?? 'V\. H\. __________________________';
+
+// Encabezados de firmas
+$sheet1->setCellValue("B{$rowNumber}", "Vo. Bo.");
+$sheet1->setCellValue("G{$rowNumber}", "Vo. Bo.");
+$rowNumber++;
+
+$sheet1->setCellValue("B{$rowNumber}", "Tesorero");
+$sheet1->setCellValue("G{$rowNumber}", "Secretario");
+$rowNumber += 2;
+
+// Nombres (con línea superior)
+$sheet1->setCellValue("B{$rowNumber}", $nombreTesorero);
+$sheet1->setCellValue("G{$rowNumber}", $nombreSecretario);
+
+// Estilos firma
+$sheet1->getStyle("B".($rowNumber-3).":G{$rowNumber}")
+       ->getFont()->getColor()->setRGB('305496');
+$sheet1->getStyle("B{$rowNumber}:G{$rowNumber}")
+       ->getFont()->setBold(true);
+
+// Línea superior a los nombres
+$sheet1->getStyle("B{$rowNumber}")->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+$sheet1->getStyle("G{$rowNumber}")->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+
+// ==============================
+// HOJA 2: REPORTE DE MOVIMIENTOS
+// ==============================
 $sheet2 = $spreadsheet->createSheet();
 $sheet2->setTitle('Reporte de Movimientos');
 
-// 1. ENCABEZADO DEL REPORTE (Hoja 2)
-$sheet2->mergeCells('A1:C1');
-$sheet2->setCellValue('A1', "A.\G.\D.\G.\A.\D.\U.");
-$sheet2->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-$sheet2->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+// Encabezado (usa datos de logias y fecha que ya calculaste)
+$sheet2->mergeCells('A1:C1')->setCellValue('A1', "A.\G.\D.\G.\A.\D.\U.");
+$sheet2->mergeCells('A2:C2')->setCellValue('A2', "GRAN LOGIA DEL ESTADO DE GUERRERO");
+$sheet2->mergeCells('A3:C3')->setCellValue('A3', "Conferencia de Grandes Logias Regulares de la R.\E.\A.\A.");
+$sheet2->mergeCells('A4:C4')->setCellValue('A4', "Resp. Simb. {$nombreLogia}");
+$sheet2->mergeCells('A5:C5')->setCellValue('A5', "Oriente de {$oriente}, a {$fechaEV}");
+$sheet2->mergeCells('A6:C6')->setCellValue('A6', "Asunto: Informe de Tesorería del Trimestre {$trimestre} de {$anio}");
 
-$sheet2->mergeCells('A2:C2');
-$sheet2->setCellValue('A2', "GRAN LOGIA DEL ESTADO DE GUERRERO");
-$sheet2->getStyle('A2')->getFont()->setBold(true)->setSize(12);
-$sheet2->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+foreach (range(1,6) as $r) {
+  $sheet2->getStyle("A{$r}:C{$r}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+  if ($r <= 3) $sheet2->getStyle("A{$r}")->getFont()->setBold(true);
+  if ($r == 1) $sheet2->getStyle("A{$r}")->getFont()->setSize(14);
+  if ($r == 2) $sheet2->getStyle("A{$r}")->getFont()->setSize(12);
+}
 
-$sheet2->mergeCells('A3:C3');
-$sheet2->setCellValue('A3', "Conferencia de Grandes Logias Regulares de la R.\E.\A.\A.");
-$sheet2->getStyle('A3')->getFont()->setBold(true);
-$sheet2->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-$sheet2->mergeCells('A4:C4');
-$sheet2->setCellValue('A4', "Pres. Simb. Rito Juárez 101 - No. 12");
-$sheet2->getStyle('A4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-$sheet2->mergeCells('A5:C5');
-$sheet2->setCellValue('A5', "Oriente de Zihuatanejo, Gro. a 25 julio 2025 E.\V.");
-$sheet2->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-$sheet2->mergeCells('A6:C6');
-$sheet2->setCellValue('A6', "Asunto: Informe de Tesorería del Trimestre $trimestre de $anio");
-$sheet2->getStyle('A6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-// 2. ENCABEZADOS Y ESTRUCTURA (Hoja 2)
-$sheet2->setCellValue('A8', 'V.H. Sublime Maestre Resendiz');
-$sheet2->getStyle('A8')->getFont()->setBold(true);
-$sheet2->setCellValue('A9', 'Gran Tesorero de la Muy Respetable Gr. Log. del Estado de Guerrero.');
-$sheet2->getStyle('A9')->getFont()->setBold(true);
+// Intro
+$sheet2->setCellValue('A8', 'V.H. Sublime Maestre Resendiz')->getStyle('A8')->getFont()->setBold(true);
+$sheet2->setCellValue('A9', 'Gran Tesorero de la Muy Respetable Gr. Log. del Estado de Guerrero.')->getStyle('A9')->getFont()->setBold(true);
 $sheet2->setCellValue('A10', 'Presente');
-
 $sheet2->setCellValue('A12', 'Por medio del presente permito informar los movimientos trimestrales administrativos de tesorería generados al interior de esta Respetable Logia Simbólica por el candidato de');
-$sheet2->setCellValue('A13', '$0.00 (CERO PESOS 00/100 M.N.)');
 
-$sheet2->setCellValue('A15', 'NÚMERO DE HERMANOS');
-$sheet2->getStyle('A15')->getFont()->setBold(true);
+// Monto del informe (usa el total del trimestre si ya lo tienes en $totalGeneral)
+$sheet2->setCellValue('A13', '$' . number_format((float)($totalGeneral ?? 0), 2, '.', ',') . ' (CERO PESOS 00/100 M.N.)');
+
+// Encabezados tabla principal
+$sheet2->setCellValue('A15', 'NÚMERO DE HERMANOS')->getStyle('A15')->getFont()->setBold(true);
 $sheet2->setCellValue('B15', 'Cantidad');
 $sheet2->setCellValue('C15', 'Subtotal');
-
-$sheet2->setCellValue('A16', 'Número de Hermanos Aprendices');
-$sheet2->setCellValue('B16', '');
-$sheet2->setCellValue('C16', '');
-$sheet2->setCellValue('A17', 'Número de Hermanos Compañeros');
-$sheet2->setCellValue('B17', '');
-$sheet2->setCellValue('C17', '');
-$sheet2->setCellValue('A18', 'Número de Hermanos Maestros libres de la Orden');
-$sheet2->setCellValue('B18', '');
-$sheet2->setCellValue('C18', '');
-$sheet2->setCellValue('A19', 'Número de Hermanos cubiertos por seguro Masónico');
-$sheet2->setCellValue('B19', '');
-$sheet2->setCellValue('C19', '');
-$sheet2->setCellValue('A20', 'Solicitudes al (la) hno(a)');
-$sheet2->setCellValue('B20', '');
-$sheet2->setCellValue('C20', '');
-$sheet2->setCellValue('A21', 'Iniciaciones (si hubo)');
-$sheet2->setCellValue('B21', '');
-$sheet2->setCellValue('C21', '');
-$sheet2->setCellValue('A22', 'Exaltaciones (si hubo)');
-$sheet2->setCellValue('B22', '');
-$sheet2->setCellValue('C22', '');
-$sheet2->setCellValue('A23', 'Afiliaciones (si hubo)');
-$sheet2->setCellValue('B23', '');
-$sheet2->setCellValue('C23', '');
-$sheet2->setCellValue('A24', 'Total de movimientos acreditados');
-$sheet2->setCellValue('B24', '');
-$sheet2->setCellValue('C24', '');
-
-$sheet2->setCellValue('A26', 'Total de miembros activos (hijos todos los hermanos que cubren)');
-$sheet2->getStyle('A26')->getFont()->setBold(true);
-$sheet2->setCellValue('B26', 'Cantidad');
-$sheet2->setCellValue('C26', 'Subtotal');
-$sheet2->setCellValue('A27', 'Capitas y Miembros libres de la Orden');
-$sheet2->setCellValue('B27', '');
-$sheet2->setCellValue('C27', '');
-$sheet2->setCellValue('A28', 'Total de miembros depositados');
-$sheet2->getStyle('A28')->getFont()->setBold(true);
-$sheet2->setCellValue('B28', 'Cantidad');
-$sheet2->setCellValue('C28', 'Subtotal');
-$sheet2->setCellValue('A29', 'Total de miembros dados de baja');
-$sheet2->getStyle('A29')->getFont()->setBold(true);
-$sheet2->setCellValue('B29', 'Cantidad');
-$sheet2->setCellValue('C29', 'Subtotal');
-
-// Estilo para encabezados y datos
-$sheet2->getStyle('A8:A10')->getFont()->setBold(true);
-$sheet2->getStyle('A15')->getFont()->setBold(true);
-$sheet2->getStyle('A26')->getFont()->setBold(true);
-$sheet2->getStyle('A28:A29')->getFont()->setBold(true);
 $sheet2->getStyle('B15:C15')->applyFromArray($headerStyle);
+
+// Orden solicitado
+$sheet2->setCellValue('A16', 'Número de Hermanos Aprendices');
+$sheet2->setCellValue('A17', 'Número de Hermanos Compañeros');
+$sheet2->setCellValue('A18', 'Número de Hermanos Maestros');
+$sheet2->setCellValue('A19', 'Número de Hermanos miembros libres de la Orden');
+$sheet2->setCellValue('A20', 'Número de Hermanos cubiertos por seguro Masónico');
+$sheet2->setCellValue('A21', 'Iniciaciones (si la hubo)');
+$sheet2->setCellValue('A22', 'Aumentos de Salario (si la hubo)');
+$sheet2->setCellValue('A23', 'Exaltaciones (si la hubo)');
+$sheet2->setCellValue('A24', 'Regularizaciones o Afiliaciones (si la hubo)');
+
+// ========= Consultas por rango de fechas =========
+// Helper: trae cantidad/subtotal por evento en tesoreria
+function fetchEvento(mysqli $conn, int $clave_logia, string $desde, string $hasta, string $campo): array {
+  $sql = "
+    SELECT COUNT(*) AS cantidad, COALESCE(SUM(t.total),0) AS subtotal
+    FROM tesoreria t
+    WHERE t.clave_logia = ?
+      AND t.fecha_registro >= ?
+      AND t.fecha_registro <  ?
+      AND {$campo} > 0
+  ";
+  $st = $conn->prepare($sql);
+  $st->bind_param('iss', $clave_logia, $desde, $hasta);
+  $st->execute();
+  return $st->get_result()->fetch_assoc() ?: ['cantidad'=>0,'subtotal'=>0];
+}
+
+// Grados: DISTINCT hermanos y subtotal por capitas del trimestre (ajusta a total si prefieres)
+$sqlGrado = "
+  SELECT COUNT(DISTINCT r.id) AS cantidad, COALESCE(SUM(t.capitas),0) AS subtotal
+  FROM tesoreria t
+  JOIN registros r ON t.id_hermano = r.id
+  JOIN informacion_masonica im ON r.id = im.id_registro
+  WHERE t.clave_logia = ?
+    AND t.fecha_registro >= ?
+    AND t.fecha_registro <  ?
+    AND im.grado_masonico = ?
+";
+$st = $conn->prepare($sqlGrado);
+$grado = 'Aprendiz';
+$st->bind_param('isss', $clave_logia, $desde, $hasta, $grado); $st->execute();
+$apr = $st->get_result()->fetch_assoc() ?: ['cantidad'=>0,'subtotal'=>0];
+
+$grado = 'Compañero';
+$st = $conn->prepare($sqlGrado);
+$st->bind_param('isss', $clave_logia, $desde, $hasta, $grado); $st->execute();
+$cmp = $st->get_result()->fetch_assoc() ?: ['cantidad'=>0,'subtotal'=>0];
+
+$grado = 'Maestro';
+$st = $conn->prepare($sqlGrado);
+$st->bind_param('isss', $clave_logia, $desde, $hasta, $grado); $st->execute();
+$mst = $st->get_result()->fetch_assoc() ?: ['cantidad'=>0,'subtotal'=>0];
+
+// Miembros libres (padron estado_hermano = 2)
+$st = $conn->prepare("SELECT COUNT(*) AS n FROM registros WHERE clave_logia = ? AND estado_hermano = 2");
+$st->bind_param('i', $clave_logia); $st->execute();
+$libresCnt = (int)($st->get_result()->fetch_assoc()['n'] ?? 0);
+$libresSub = 0; // si quieres sumar capitas de libres, dime cómo lo registras y lo cambiamos
+
+// Eventos
+$seg = fetchEvento($conn, $clave_logia, $desde, $hasta, 't.seguro');          // Seguro
+$ini = fetchEvento($conn, $clave_logia, $desde, $hasta, 't.iniciacion');      // Iniciaciones
+$aum = fetchEvento($conn, $clave_logia, $desde, $hasta, 't.aumento_salario'); // Aumentos de salario (si NO tienes esta columna, cambia a la que uses)
+$exa = fetchEvento($conn, $clave_logia, $desde, $hasta, 't.exaltacion');      // Exaltaciones
+$afi = fetchEvento($conn, $clave_logia, $desde, $hasta, 't.afiliacion');      // Afiliaciones
+$reg = fetchEvento($conn, $clave_logia, $desde, $hasta, 't.regularizacion');  // Regularizaciones (si no existe, deja 0)
+
+// Regularizaciones o Afiliaciones (sumados)
+$regAfiCantidad = ($afi['cantidad'] ?? 0) + ($reg['cantidad'] ?? 0);
+$regAfiSubtotal = ($afi['subtotal'] ?? 0) + ($reg['subtotal'] ?? 0);
+
+// ========= Volcado de datos =========
+$sheet2->setCellValue('B16', $apr['cantidad']); $sheet2->setCellValue('C16', $apr['subtotal']);
+$sheet2->setCellValue('B17', $cmp['cantidad']); $sheet2->setCellValue('C17', $cmp['subtotal']);
+$sheet2->setCellValue('B18', $mst['cantidad']); $sheet2->setCellValue('C18', $mst['subtotal']);
+$sheet2->setCellValue('B19', $libresCnt);       $sheet2->setCellValue('C19', $libresSub);
+$sheet2->setCellValue('B20', $seg['cantidad']); $sheet2->setCellValue('C20', $seg['subtotal']);
+$sheet2->setCellValue('B21', $ini['cantidad']); $sheet2->setCellValue('C21', $ini['subtotal']);
+$sheet2->setCellValue('B22', $aum['cantidad']); $sheet2->setCellValue('C22', $aum['subtotal']);
+$sheet2->setCellValue('B23', $exa['cantidad']); $sheet2->setCellValue('C23', $exa['subtotal']);
+$sheet2->setCellValue('B24', $regAfiCantidad);  $sheet2->setCellValue('C24', $regAfiSubtotal);
+
+// Formatos y bordes
+foreach (range(16,24) as $r) {
+  $sheet2->getStyle("C{$r}")->getNumberFormat()->setFormatCode('"$"#,##0.00');
+}
+$sheet2->getStyle('A15:C24')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+// Bloque “activos / desplomados / bajas” (opcional si lo sigues mostrando abajo)
+$sheet2->setCellValue('A26', 'Total de miembros activos (Capitas y Miembros libres de la Orden)')->getStyle('A26')->getFont()->setBold(true);
+$sheet2->setCellValue('B26', 'Cantidad'); $sheet2->setCellValue('C26', 'Subtotal');
 $sheet2->getStyle('B26:C26')->applyFromArray($headerStyle);
-$sheet2->getStyle('B28:C28')->applyFromArray($headerStyle);
-$sheet2->getStyle('B29:C29')->applyFromArray($headerStyle);
 
-// 3. OBTENER DATOS PARA REPORTES
-$mesInicio = sprintf("%02d", ($trimestre - 1) * 3 + 1);
-$mesFin = sprintf("%02d", $trimestre * 3);
+// Activos = estado 1 (activos) + 2 (libres)
+$st = $conn->prepare("SELECT COUNT(*) AS n FROM registros WHERE clave_logia = ? AND estado_hermano IN (1,2)");
+$st->bind_param('i', $clave_logia); $st->execute();
+$activosCnt = (int)($st->get_result()->fetch_assoc()['n'] ?? 0);
 
-// Aprendices
-$queryAprendices = "SELECT COUNT(DISTINCT r.id) as cantidad, SUM(t.total) as subtotal 
-                    FROM tesoreria t 
-                    JOIN registros r ON t.id_hermano = r.id 
-                    JOIN informacion_masonica im ON r.id = im.id_registro 
-                    WHERE im.grado_masonico = 'Aprendiz' 
-                    AND YEAR(t.fecha_registro) = ? 
-                    AND MONTH(t.fecha_registro) BETWEEN ? AND ?";
-$stmtAprendices = $conn->prepare($queryAprendices);
-$stmtAprendices->bind_param("iii", $anio, $mesInicio, $mesFin);
-$stmtAprendices->execute();
-$resultAprendices = $stmtAprendices->get_result();
-$aprendices = $resultAprendices->fetch_assoc();
-$aprendicesCount = $aprendices['cantidad'];
-$aprendicesSubtotal = $aprendices['subtotal'];
+// Subtotal activos: capitas del trimestre
+$st = $conn->prepare("SELECT COALESCE(SUM(t.capitas),0) AS sub FROM tesoreria t WHERE t.clave_logia = ? AND t.fecha_registro >= ? AND t.fecha_registro < ?");
+$st->bind_param('iss', $clave_logia, $desde, $hasta); $st->execute();
+$activosSub = (float)($st->get_result()->fetch_assoc()['sub'] ?? 0);
 
-// Compañeros
-$queryCompaneros = "SELECT COUNT(DISTINCT r.id) as cantidad, SUM(t.total) as subtotal 
-                    FROM tesoreria t 
-                    JOIN registros r ON t.id_hermano = r.id 
-                    JOIN informacion_masonica im ON r.id = im.id_registro 
-                    WHERE im.grado_masonico = 'Compañero' 
-                    AND YEAR(t.fecha_registro) = ? 
-                    AND MONTH(t.fecha_registro) BETWEEN ? AND ?";
-$stmtCompaneros = $conn->prepare($queryCompaneros);
-$stmtCompaneros->bind_param("iii", $anio, $mesInicio, $mesFin);
-$stmtCompaneros->execute();
-$resultCompaneros = $stmtCompaneros->get_result();
-$companeros = $resultCompaneros->fetch_assoc();
-$companerosCount = $companeros['cantidad'];
-$companerosSubtotal = $companeros['subtotal'];
-
-// Maestros
-$queryMaestros = "SELECT COUNT(DISTINCT r.id) as cantidad, SUM(t.total) as subtotal 
-                  FROM tesoreria t 
-                  JOIN registros r ON t.id_hermano = r.id 
-                  JOIN informacion_masonica im ON r.id = im.id_registro 
-                  WHERE im.grado_masonico = 'Maestro' 
-                  AND YEAR(t.fecha_registro) = ? 
-                  AND MONTH(t.fecha_registro) BETWEEN ? AND ?";
-$stmtMaestros = $conn->prepare($queryMaestros);
-$stmtMaestros->bind_param("iii", $anio, $mesInicio, $mesFin);
-$stmtMaestros->execute();
-$resultMaestros = $stmtMaestros->get_result();
-$maestros = $resultMaestros->fetch_assoc();
-$maestrosCount = $maestros['cantidad'];
-$maestrosSubtotal = $maestros['subtotal'];
-
-// Seguro Masónico
-$querySeguro = "SELECT COUNT(DISTINCT t.id_hermano) as cantidad, SUM(t.total) as subtotal 
-                FROM tesoreria t 
-                WHERE t.seguro > 0 
-                AND YEAR(t.fecha_registro) = ? 
-                AND MONTH(t.fecha_registro) BETWEEN ? AND ?";
-$stmtSeguro = $conn->prepare($querySeguro);
-$stmtSeguro->bind_param("iii", $anio, $mesInicio, $mesFin);
-$stmtSeguro->execute();
-$resultSeguro = $stmtSeguro->get_result();
-$seguro = $resultSeguro->fetch_assoc();
-$seguroCount = $seguro['cantidad'];
-$seguroSubtotal = $seguro['subtotal'];
-
-// Iniciaciones
-$queryIniciacion = "SELECT COUNT(*) as cantidad, SUM(t.total) as subtotal 
-                    FROM tesoreria t 
-                    WHERE t.iniciacion > 0 
-                    AND YEAR(t.fecha_registro) = ? 
-                    AND MONTH(t.fecha_registro) BETWEEN ? AND ?";
-$stmtIniciacion = $conn->prepare($queryIniciacion);
-$stmtIniciacion->bind_param("iii", $anio, $mesInicio, $mesFin);
-$stmtIniciacion->execute();
-$resultIniciacion = $stmtIniciacion->get_result();
-$iniciacion = $resultIniciacion->fetch_assoc();
-$iniciacionCount = $iniciacion['cantidad'];
-$iniciacionSubtotal = $iniciacion['subtotal'];
-
-// Exaltaciones
-$queryExaltacion = "SELECT COUNT(*) as cantidad, SUM(t.total) as subtotal 
-                    FROM tesoreria t 
-                    WHERE t.exaltacion > 0 
-                    AND YEAR(t.fecha_registro) = ? 
-                    AND MONTH(t.fecha_registro) BETWEEN ? AND ?";
-$stmtExaltacion = $conn->prepare($queryExaltacion);
-$stmtExaltacion->bind_param("iii", $anio, $mesInicio, $mesFin);
-$stmtExaltacion->execute();
-$resultExaltacion = $stmtExaltacion->get_result();
-$exaltacion = $resultExaltacion->fetch_assoc();
-$exaltacionCount = $exaltacion['cantidad'];
-$exaltacionSubtotal = $exaltacion['subtotal'];
-
-// Afiliaciones
-$queryAfiliacion = "SELECT COUNT(*) as cantidad, SUM(t.total) as subtotal 
-                    FROM tesoreria t 
-                    WHERE t.afiliacion > 0 
-                    AND YEAR(t.fecha_registro) = ? 
-                    AND MONTH(t.fecha_registro) BETWEEN ? AND ?";
-$stmtAfiliacion = $conn->prepare($queryAfiliacion);
-$stmtAfiliacion->bind_param("iii", $anio, $mesInicio, $mesFin);
-$stmtAfiliacion->execute();
-$resultAfiliacion = $stmtAfiliacion->get_result();
-$afiliacion = $resultAfiliacion->fetch_assoc();
-$afiliacionCount = $afiliacion['cantidad'];
-$afiliacionSubtotal = $afiliacion['subtotal'];
-
-// 4. LLENAR DATOS EN LA HOJA (Hoja 2)
-$sheet2->setCellValue('B16', $aprendicesCount);
-$sheet2->setCellValue('C16', $aprendicesSubtotal);
-$sheet2->getStyle('C16')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$sheet2->setCellValue('B17', $companerosCount);
-$sheet2->setCellValue('C17', $companerosSubtotal);
-$sheet2->getStyle('C17')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$sheet2->setCellValue('B18', $maestrosCount);
-$sheet2->setCellValue('C18', $maestrosSubtotal);
-$sheet2->getStyle('C18')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$sheet2->setCellValue('B19', $seguroCount);
-$sheet2->setCellValue('C19', $seguroSubtotal);
-$sheet2->getStyle('C19')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$sheet2->setCellValue('B20', 0); // Solicitudes al hno(a), asumido 0 por falta de datos
-$sheet2->setCellValue('C20', 0);
-$sheet2->getStyle('C20')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$sheet2->setCellValue('B21', $iniciacionCount);
-$sheet2->setCellValue('C21', $iniciacionSubtotal);
-$sheet2->getStyle('C21')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$sheet2->setCellValue('B22', $exaltacionCount);
-$sheet2->setCellValue('C22', $exaltacionSubtotal);
-$sheet2->getStyle('C22')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$sheet2->setCellValue('B23', $afiliacionCount);
-$sheet2->setCellValue('C23', $afiliacionSubtotal);
-$sheet2->getStyle('C23')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$totalMovimientosSubtotal = $iniciacionSubtotal + $exaltacionSubtotal + $afiliacionSubtotal;
-$sheet2->setCellValue('B24', $iniciacionCount + $exaltacionCount + $afiliacionCount);
-$sheet2->setCellValue('C24', $totalMovimientosSubtotal);
-$sheet2->getStyle('C24')->getNumberFormat()->setFormatCode('"$"#,##0.00');
-
-$sheet2->setCellValue('B27', 0); // Capitas y Miembros libres, asumido 0 por falta de datos
-$sheet2->setCellValue('C27', 0);
+$sheet2->setCellValue('B27', $activosCnt);
+$sheet2->setCellValue('C27', $activosSub);
 $sheet2->getStyle('C27')->getNumberFormat()->setFormatCode('"$"#,##0.00');
+$sheet2->getStyle('A27:C27')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-$sheet2->setCellValue('B28', 0); // Total de miembros depositados, asumido 0 por falta de datos
-$sheet2->setCellValue('C28', 0);
-$sheet2->getStyle('C28')->getNumberFormat()->setFormatCode('"$"#,##0.00');
+$sheet2->setCellValue('A28', 'Total de miembros desplomados')->getStyle('A28')->getFont()->setBold(true);
+$sheet2->setCellValue('B28', 'Cantidad'); $sheet2->setCellValue('C28', 'Subtotal');
+$sheet2->getStyle('B28:C28')->applyFromArray($headerStyle);
 
-$sheet2->setCellValue('B29', 0); // Total de miembros dados de baja, asumido 0 por falta de datos
+$st = $conn->prepare("SELECT COUNT(*) AS n FROM registros WHERE clave_logia = ? AND estado_hermano = 3");
+$st->bind_param('i', $clave_logia); $st->execute();
+$desplomadosCnt = (int)($st->get_result()->fetch_assoc()['n'] ?? 0);
+$sheet2->setCellValue('B29', $desplomadosCnt);
 $sheet2->setCellValue('C29', 0);
 $sheet2->getStyle('C29')->getNumberFormat()->setFormatCode('"$"#,##0.00');
+$sheet2->getStyle('A29:C29')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-// 5. AJUSTAR ANCHO DE COLUMNAS (Hoja 2)
-$sheet2->getColumnDimension('A')->setWidth(40);
-$sheet2->getColumnDimension('B')->setWidth(12);
-$sheet2->getColumnDimension('C')->setWidth(15);
+$sheet2->setCellValue('A30', 'Total de miembros dados de baja')->getStyle('A30')->getFont()->setBold(true);
+$sheet2->setCellValue('B30', 'Cantidad'); $sheet2->setCellValue('C30', 'Subtotal');
+$sheet2->getStyle('B30:C30')->applyFromArray($headerStyle);
+
+$st = $conn->prepare("SELECT COUNT(*) AS n FROM registros WHERE clave_logia = ? AND estado_hermano = 0");
+$st->bind_param('i', $clave_logia); $st->execute();
+$bajasCnt = (int)($st->get_result()->fetch_assoc()['n'] ?? 0);
+$sheet2->setCellValue('B31', $bajasCnt);
+$sheet2->setCellValue('C31', 0);
+$sheet2->getStyle('C31')->getNumberFormat()->setFormatCode('"$"#,##0.00');
+$sheet2->getStyle('A31:C31')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+// Anchos
+$sheet2->getColumnDimension('A')->setWidth(54);
+$sheet2->getColumnDimension('B')->setWidth(14);
+$sheet2->getColumnDimension('C')->setWidth(16);
+
 
 // 6. GENERAR Y DESCARGAR ARCHIVO
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
