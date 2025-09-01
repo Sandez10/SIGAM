@@ -12,7 +12,7 @@ $result = $stmt->get_result();
 $logias = $result->fetch_all(MYSQLI_ASSOC); // Corregido: cambiamos $hermanos por $logias
 $stmt->close();
 // Verificar si el rol es admin
-if ($_SESSION['rol'] !== 'superadmin') {
+if ($_SESSION['rol'] !== 'venerable' && $_SESSION['rol']!== 'fullmaester') {
     echo "<script>
         alert('No tienes permiso para acceder a esta página.');
         history.back();
@@ -159,9 +159,10 @@ if ($_SESSION['rol'] !== 'superadmin') {
             </div>
             <select id="filterRole" class="glass-card px-4 py-2.5 text-sm">
               <option value="">Filtrar por Rol</option>
-              <option value="administrador">Administrador</option>
-              <option value="miembro">miembro</option>
-              <option value="superadmin">Super Administrador</option>
+              <option value="fullmaester">Full Master</option>
+              <option value="secretario">secretario</option>
+              <option value="tesorero">tesorero</option>
+              <option value="venerable">venerable</option>
             </select>
             <select id="filterStatus" class="glass-card px-4 py-2.5 text-sm">
               <option value="">Filtrar por Estado</option>
@@ -216,9 +217,10 @@ if ($_SESSION['rol'] !== 'superadmin') {
                         <label for="createRol" class="block mb-1 font-medium">Rol</label>
                         <select id="createRol" class="w-full glass-card" required>
                             <option value="">-- Seleccionar Rol --</option>
-                            <option value="administrador">Administrador</option>
-                            <option value="miembro">Usuario</option>
-                            <option value="superadmin">Super Administrador</option>
+                            <option value="fullmaester">Full Master</option>
+                            <option value="secretario">secretario</option>
+                            <option value="tesorero">tesorero</option>
+                            <option value="venerable">venerable</option>
                         </select>
                     </div>
                     <div>
@@ -283,9 +285,10 @@ if ($_SESSION['rol'] !== 'superadmin') {
                 <label for="editRol" class="block mb-1 font-medium">Rol</label>
                 <select id="editRol" class="w-full" required>
                   <option value="">-- Seleccionar Rol --</option>
-                  <option value="administrador">Administrador</option>
-                  <option value="miembro">Usuario</option>
-                  <option value="superadmin">Super Administrador</option>
+                  <option value="fullmaester">Full Master</option>
+                  <option value="secretario">secretario</option>
+                  <option value="tesorero">tesorero</option>
+                  <option value="venerable">venerable</option>
                 </select>
                 <p class="error-message hidden" id="editRol-error">Seleccione un rol</p>
               </div>

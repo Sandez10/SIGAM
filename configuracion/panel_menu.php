@@ -42,9 +42,10 @@ try {
 }
 
 $permisos = [
-    'superadmin' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],
-    'administrador' => ['inicio', 'actas', 'salir'],
-    'miembro' => ['inicio', 'tesoreria', 'actas', 'salir']
+    'fullmaester' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],//vista de todas las logias
+    'venerable' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],//Este es para los miembros de alto rango de su misma LOGIA
+    'secretario' => ['inicio','secretaria', 'actas', 'salir'], //Este es para los SECRETARIOS
+    'tesorero' => ['inicio', 'tesoreria','reportes', 'salir'] //este es para los TESOREROS
 ];
 
 $menu_items = [
@@ -53,17 +54,19 @@ $menu_items = [
         'permiso' => 'secretaria',
         'submenu' => [
 //            'Alta de Tesorero/Secretario' => BASE_URL . 'configuracion/',
-            'Lista de Registros' => BASE_URL . 'configuracion/',
-            'Alta de Tesorero/Secretario' => BASE_URL . 'secretaria/alta/',
+            'Registro de Secretaría' => BASE_URL . 'secretaria/',
+//            'Lista de Registros' => BASE_URL . 'configuracion/',
+            'Alta de Dignatarios/Oficiales' => BASE_URL . 'secretaria/alta/',
 //            'Lista de Registros' => BASE_URL . 'secretaria/listado_tes_sec.php',
 //            'Visualizar Reportes' => BASE_URL . 'mostrar_reportes/'
-            'Actas' => BASE_URL . 'actas/',
-            'Visualizar Reportes' => BASE_URL . 'configuracion/'
+//            'Actas' => BASE_URL . 'actas/',
+//            'Visualizar Reportes' => BASE_URL . 'reportes-generales/',
+//            'Expediente de Hermanos' => BASE_URL . 'reportes/expediente/'
         ]
     ],
     'Usuarios' => ['url' => BASE_URL . 'usuarios/', 'permiso' => 'usuarios'],
     'Tesorería' => ['url' => BASE_URL . 'tesoreria/', 'permiso' => 'tesoreria'],
-    'Reportes' => ['url' => BASE_URL . 'reportes/', 'permiso' => 'reportes'],
+    'Reportes' => ['url' => BASE_URL . 'reportes-generales/', 'permiso' => 'reportes'],
     'Configuración' => ['url' => BASE_URL . 'configuracion/', 'permiso' => 'configuracion'],
     'Cerrar Sesión' => ['url' => BASE_URL . 'salir/', 'permiso' => 'salir']
 ];

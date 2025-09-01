@@ -7,9 +7,36 @@ $conn = $db->getConnection();
 
 // Verificar si el usuario está logueado
 if (!isset($_SESSION['user_name'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['check_session'])) {
+        header('Content-Type: application/json');
+        http_response_code(401);
+        echo json_encode(['error' => 'No hay sesión de usuario activa']);
+        exit;
+    }
     header('Content-Type: application/json');
     http_response_code(401);
     echo json_encode(['error' => 'No hay sesión de usuario activa']);
+    exit;
+}
+
+// Manejar verificación de sesión vía AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['check_session'])) {
+    header('Content-Type: application/json');
+    
+    // Obtener datos de la logía
+    $datosLogia = obtenerDatosLogia();
+    
+    if ($datosLogia === null) {
+        http_response_code(500);
+        echo json_encode(['error' => 'No se pudieron obtener los datos de la logia']);
+        exit;
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'user' => $_SESSION['user_name'],
+        'logia' => $datosLogia['logia']
+    ]);
     exit;
 }
 
@@ -17,9 +44,17 @@ if (!isset($_SESSION['user_name'])) {
 $datosLogia = obtenerDatosLogia();
 
 if ($datosLogia === null) {
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode(['error' => 'No se pudieron obtener los datos de la logia']);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        header('Content-Type: application/json');
+        http_response_code(500);
+        echo json_encode(['error' => 'No se pudieron obtener los datos de la logia']);
+        exit;
+    }
+    // Para peticiones GET normales, mostrar error en la página
+    echo "<script>
+        alert('No se pudieron obtener los datos de la logia');
+        window.location.href = '../salir/';
+    </script>";
     exit;
 }
 
@@ -84,12 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['evidencia'])) {
     exit;
 }
 
-$rol_usuario = $_SESSION['rol'] ?? 'miembro'; // rol por defecto si no está definido
+$rol_usuario = $_SESSION['rol'] ?? 'secretario'; // rol por defecto si no está definido
 
 $permisos = [
-    'superadmin' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],
-    'administrador' => ['inicio', 'actas', 'salir'],
-    'miembro' => ['inicio', 'tesoreria', 'actas', 'salir']
+    'fullmaester' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],
+    'venerable' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],
+    'secretario' => ['inicio', 'secretaria', 'actas', 'salir'],
+    'tesorero' => ['inicio', 'tesoreria', 'reportes', 'salir']
 ];
 
 function generarMenu($rol, $permisos) {
@@ -116,6 +152,15 @@ function generarMenu($rol, $permisos) {
         $html .= '<li><a href="' . $item['url'] . '" class="block p-2 rounded-lg hover:bg-[var(--border-color)] ' . $extra . '">' . $item['label'] . '</a></li>';
     }
     return $html;
+}
+
+// Verificar si el rol es tesorero (no tiene acceso a esta página)
+if ($_SESSION['rol'] === 'tesorero') {
+    echo "<script>
+        alert('No tienes permiso para acceder a esta página.');
+        history.back();
+    </script>";
+    exit();
 }
 ?>
 <!DOCTYPE html>
@@ -213,7 +258,14 @@ function generarMenu($rol, $permisos) {
           <h1 class="text-2xl font-bold text-[var(--primary-color)]">Subir reportes</h1>
           <p class="text-sm text-[var(--text-light)]">Gran Logia del Estado de Guerrero</p>
         </div>
-
+        <div class="flex gap-2">
+          <a href="../ver-actas/" class="btn btn-primary">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Ver Actas
+          </a>
+        </div>
       </header>
 
       <!-- Formulario para subir reportes -->
@@ -274,7 +326,7 @@ function generarMenu($rol, $permisos) {
   <script>
     // Verificar sesión y datos de logia al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
-      fetch('', { method: 'GET' })
+      fetch('?check_session=1', { method: 'GET' })
         .then(response => response.json())
         .then(data => {
           if (data.error) {
@@ -287,9 +339,12 @@ function generarMenu($rol, $permisos) {
             }).then(() => {
               window.location.href = '../salir/';
             });
+          } else if (data.success) {
+            console.log('Sesión verificada correctamente');
           }
         })
         .catch(error => {
+          console.error('Error al verificar la sesión:', error);
           Swal.fire({
             icon: 'error',
             title: 'Error',

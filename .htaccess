@@ -3,10 +3,10 @@
     
     #Reglas para URLS limpias para principal    
     RewriteRule ^secretaria/?$ formulario/form_sec.php [NC,L]
-    RewriteRule ^tesoreria/?$ formulario/form_tes.php [NC,L]
     RewriteRule ^usuarios/?$ usuarios/all_usuarios.php [NC,L]
-    RewriteRule ^actas/?$ reportes/subir_reporte.php [NC,L]
-    RewriteRule ^reportes/?$ reportes/ver_reportes.php [NC,L]
+    RewriteRule ^reportes-generales/?$ reportes/elegir_reporte.php [NC,L]
+    RewriteRule ^reportes/expediente/?$ reportes/expediente_hermano.php [NC,L]
+    RewriteRule ^reportes/download/?$ excel_pdf/reportePDF/descargar_expediente.php [NC,L]
     RewriteRule ^configuracion/?$ configuracion/en_construccion.php [NC,L]
     RewriteRule ^salir/?$ sesiones_conexiones/logout.php [NC,L]
     RewriteRule ^guardar/?$ registros_b/guardar_registro.php [NC,L]
@@ -17,9 +17,22 @@
     RewriteRule ^panel/?$ configuracion/cambiar_contrasena.php [NC,L]
     RewriteRule ^secretaria/alta/?$ secretaria/form_tes_sec.php [NC,L]
     RewriteRule ^secretaria/alta/r/?$ secretaria/guardar_tesorero_secretario.php [NC,L]
+    RewriteRule ^movimientos-tesoreria/?$ configuracion/movimiento_registro_tes.php [NC,L]
 
+    #secretaría-------------------------------------------------------------------
+    RewriteRule ^panel-secretaria/?$ secretaria/panel-secretaria.php [NC,L]
+    RewriteRule ^actas/?$ reportes/subir_reporte.php [NC,L]
+    RewriteRule ^ver-actas/?$ reportes/ver-actas.php [NC,L]
+    RewriteRule ^reportes/expediente/?$ reportes/expediente_hermano.php [NC,L]
+    #-----------------------------------------------------------------------------
+
+    #tesoreria--------------------------------------------------------------------
+    RewriteRule ^panel-tesoreria/?$ tesoreria/panel-tesoreria.php [NC,L]
+    RewriteRule ^reporte-tesoreria/?$ reportes/ver_reportes.php [NC,L]
+    RewriteRule ^tesoreria/?$ formulario/form_tes.php [NC,L]
     
 
+    #-----------------------------------------------------------------------------
     # Otras reglas existentes...
     RewriteRule ^plataforma/?$ plataforma/principal.php [NC,L]
     RewriteRule ^login/?$ sesiones_conexiones/validar_sesion.php [NC,L]

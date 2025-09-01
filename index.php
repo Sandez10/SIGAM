@@ -18,7 +18,7 @@
           </svg>
         </div>
         <h1>SIGAM</h1>
-        <p>Sistema Integral de Gestión Administrativo</p>
+        <p>Sistema Integral de Gestión Administrativo Masónica</p>
       </div>
       <div class="login-body">
 <form id="loginForm" action="login" method="POST" autocomplete="off">
@@ -63,9 +63,6 @@
         icon.classList.add('bi-eye-fill');
       }
     });
-
-
-
 document.getElementById('loginForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -87,7 +84,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         if (data.success) {
             // Mostrar mensaje de éxito antes de redirigir
             Swal.fire({
-                title: '¡Bienvenido!',
+                title: 'Validación Correcta!',
                 text: 'Redirigiendo...',
                 icon: 'success',
                 showConfirmButton: false,
@@ -134,7 +131,6 @@ if (errorMessage) {
     // Limpiar el parámetro de la URL
     window.history.replaceState({}, document.title, window.location.pathname);
 }
-    
   </script>
 </body>
 </html>

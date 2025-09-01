@@ -1190,13 +1190,11 @@ $pdf->Line(30, $signatureY, 100, $signatureY);
 $pdf->SetXY(30, $signatureY + 3);
 $pdf->SetFont('Arial', 'B', BODY_FONT_SIZE - 1);
 $pdf->Cell(70, 5, utf8_decode($nombreTesorero), 0, 2, 'C');
-$pdf->Cell(70, 5, utf8_decode('TESORERO DE LA LOGIA'), 0, 0, 'C');
 
 // Firma del secretario
 $pdf->Line(120, $signatureY, 190, $signatureY);
 $pdf->SetXY(120, $signatureY + 3);
 $pdf->Cell(70, 5, utf8_decode($nombreSecretario), 0, 2, 'C');
-$pdf->Cell(70, 5, utf8_decode('SECRETARIO DE LA LOGIA'), 0, 1, 'C');
 
 $pdf->addVerticalSpace(30);
 

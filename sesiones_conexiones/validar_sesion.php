@@ -38,11 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($usuario_data && password_verify($clave, $usuario_data['clave'])) {
             switch ($usuario_data['estado']) {
                 case ESTADO_INACTIVO:
-                    $response['message'] = 'Tu cuenta está inactiva. Por favor, contacta al administrador.';
+                    $response['message'] = 'Tu cuenta está inactiva. Por favor, contacta al venerable maestro.';
                     break;
                 
                 case ESTADO_SUSPENDIDO:
-                    $response['message'] = 'Tu cuenta está suspendida. Contacta al administrador para más información.';
+                    $response['message'] = 'Tu cuenta está suspendida. Contacta al venerable maestro para más información.';
                     break;
                 
                 case ESTADO_ACTIVO:

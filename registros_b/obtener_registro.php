@@ -23,7 +23,8 @@ function obtenerListadoHermanos($logia_registro) {
     $grados_masonicos = [
         'aprendiz' => 'Aprendiz',
         'companero' => 'Compañero',
-        'maestro' => 'Maestro'
+        'maestro' => 'Maestro',
+        'libre de la orde' => 'Libre de la Orden'
     ];
 
     $query = "SELECT r.id, r.nombre_completo, r.estado_hermano, im.grado_masonico

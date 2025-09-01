@@ -50,9 +50,9 @@ $rol_usuario = $_SESSION['rol'] ?? 'miembro'; // rol por defecto si no está def
 
 
 $permisos = [
-    'superadmin' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],
-    'administrador' => ['inicio', 'actas', 'salir'],
-    'miembro' => ['inicio', 'tesoreria', 'actas', 'salir']
+    'venerable' => ['inicio', 'secretaria', 'usuarios', 'tesoreria', 'actas', 'reportes', 'configuracion', 'salir'],
+    'secretario' => ['inicio', 'secretaria', 'salir'],
+    'tesorero' => ['inicio', 'tesoreria', 'salir']
 ];
 function generarMenu($rol, $permisos) {
     if (!isset($permisos[$rol])) {
@@ -80,7 +80,7 @@ function generarMenu($rol, $permisos) {
     return $html;
 }
 // Verificar si el rol es admin
-if ($_SESSION['rol'] !== 'superadmin') {
+if ($_SESSION['rol'] === 'secretario') {
     echo "<script>
         alert('No tienes permiso para acceder a esta página.');
         history.back();

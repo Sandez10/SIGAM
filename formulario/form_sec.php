@@ -81,7 +81,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Verificar si el rol es admin
-if ($_SESSION['rol'] !== 'superadmin') {
+if ($_SESSION['rol'] === 'tesorero') {
     echo "<script>
         alert('No tienes permiso para acceder a esta página.');
         history.back();

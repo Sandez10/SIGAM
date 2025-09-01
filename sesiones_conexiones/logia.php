@@ -1,4 +1,5 @@
 <?php
+//logia.php
 // Configuración de errores
 require_once '../sesiones_conexiones/sesion_config.php';
 require_once '../database/conexion.php';

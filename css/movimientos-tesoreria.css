@@ -1,0 +1,310 @@
+/* ===========================
+   Tema y variables
+   =========================== */
+:root{
+  --primary-color:#2c3e50;
+  --secondary-color:#3498db;
+  --accent-color:#2980b9;
+  --light-color:#f8f9fa;
+  --dark-color:#34495e;
+  --success-color:#27ae60;
+  --text-color:#2c3e50;
+  --text-light:#7f8c8d;
+  --border-color:#e0e0e0;
+  --error-color:#ef4444;
+  --card-bg:#ffffff;
+}
+
+/* Reset suave y base */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Roboto','Segoe UI',system-ui,sans-serif;
+  color:var(--text-color);
+  background:#f5f7fa;
+  line-height:1.55;
+  overflow-x:hidden;
+}
+
+/* Evita fondos / imágenes gigantes “heredadas” */
+body,
+.content{
+  background-image:none !important;
+}
+.content > img:only-child,
+.content > img:first-child{
+  max-width:160px;
+  height:auto;
+  display:block;
+  margin:0 0 .5rem 0;
+}
+
+/* ===========================
+   Layout
+   =========================== */
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:1rem;
+  display:grid;
+  grid-template-columns: 1fr;   /* por defecto: sin sidebar visible */
+  gap:1.25rem;
+  min-height:100vh;
+}
+
+/* Si tu panel lateral imprime .sidebar, dale la columna fija */
+.container > .sidebar{
+  width:260px;
+  background:var(--light-color);
+  border:1px solid var(--border-color);
+  border-radius:14px;
+  padding:1rem;
+  position:sticky;
+  top:1rem;
+  height:calc(100vh - 2rem);
+  overflow:auto;
+}
+.container > .content{ width:100% }
+
+/* Header de página */
+.header{
+  position:sticky;
+  top:0;
+  z-index:5;
+  background:var(--light-color);
+  border:1px solid var(--border-color);
+  border-radius:14px;
+  padding:1rem 1.25rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+/* ===========================
+   Tarjetas y botones
+   =========================== */
+.glass-card{
+  background:var(--card-bg);
+  border:1px solid var(--border-color);
+  border-radius:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,.06);
+  transition:.25s ease;
+  padding:1.25rem;
+}
+.glass-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 22px rgba(0,0,0,.08);
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--secondary-color),var(--accent-color));
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  padding:.7rem 1.2rem;
+  font-weight:500;
+  cursor:pointer;
+  transition:.2s ease;
+}
+.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 16px rgba(0,0,0,.15);
+}
+
+.btn-secondary{
+  background:var(--light-color);
+  color:var(--text-color);
+  border:1px solid var(--border-color);
+  border-radius:12px;
+  padding:.7rem 1.2rem;
+  font-weight:500;
+  cursor:pointer;
+  transition:.2s ease;
+}
+.btn-secondary:hover{
+  background:#eef2f7;
+  transform:translateY(-2px);
+}
+
+/* Inputs */
+input,select{
+  width:100%;
+  border:1px solid var(--border-color);
+  border-radius:10px;
+  padding:.8rem .9rem;
+  font-size:.95rem;
+  background:#fff;
+  transition:.2s ease;
+}
+input:focus,select:focus{
+  border-color:var(--secondary-color);
+  box-shadow:0 0 0 4px rgba(52,152,219,.18);
+  outline:0;
+}
+
+/* ===========================
+   Tabla de movimientos
+   =========================== */
+.table-wrap{
+  overflow:auto;
+  border-radius:14px;
+  border:1px solid var(--border-color);
+  background:#fff;
+}
+.table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  min-width:900px; /* evita que se apelmace */
+  font-size:.94rem;
+}
+.table thead th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:#f8fafc;
+  color:var(--primary-color);
+  text-align:left;
+  padding:.85rem .75rem;
+  border-bottom:1px solid var(--border-color);
+  white-space:nowrap;
+}
+.table tbody td{
+  padding:.75rem .75rem;
+  border-bottom:1px solid var(--border-color);
+  color:#273444;
+}
+.table tbody tr:hover{
+  background:#f6fbff;
+}
+.table .money{
+  font-variant-numeric: tabular-nums;
+  text-align:right;
+  white-space:nowrap;
+  font-weight:600;
+}
+
+/* Paginación */
+.pagination{
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  margin-top:1rem;
+}
+.pagination .btn-secondary[disabled],
+.pagination .btn-secondary.disabled{
+  opacity:.5; pointer-events:none;
+}
+
+/* ===========================
+   Modal de edición
+   =========================== */
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  background:rgba(0,0,0,.65);
+  align-items:center;
+  justify-content:center;
+}
+.modal.show{ display:flex }
+.modal-content{
+  background:#ffffff;
+  border-radius:16px;
+  max-width:900px;
+  width:92%;
+  max-height:90vh;
+  overflow:auto;
+  padding:1.4rem;
+  box-shadow:0 10px 25px rgba(0,0,0,.18);
+  animation:modalIn .18s ease-out;
+}
+@keyframes modalIn{
+  from{ transform:translateY(10px); opacity:.7 }
+  to{ transform:translateY(0); opacity:1 }
+}
+
+/* ===========================
+   Combo buscable (input + lista)
+   =========================== */
+.combo{ position:relative }
+.combo-menu{
+  position:absolute;
+  left:0; right:0;
+  top:calc(100% + .3rem);
+  max-height:16rem;
+  overflow:auto;
+  background:#fff;
+  border:1px solid var(--border-color);
+  border-radius:10px;
+  box-shadow:0 10px 20px rgba(0,0,0,.1);
+  display:none;
+  z-index:50;
+}
+.combo-menu.open{ display:block }
+.combo-item{
+  padding:.55rem .75rem;
+  cursor:pointer;
+}
+.combo-item:hover{
+  background:#f3f6fb;
+}
+.combo-empty{
+  padding:.6rem .75rem;
+  color:var(--text-light);
+}
+
+/* ===========================
+   Utilidades
+   =========================== */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:.4rem;
+  padding:.25rem .6rem;
+  border-radius:999px;
+  font-size:.78rem;
+  border:1px solid var(--border-color);
+  background:#fff;
+}
+.badge.success{
+  border-color:#b8ebc7;
+  color:#116533;
+  background:#e9fbef;
+}
+.badge.warn{
+  border-color:#ffe0b2;
+  color:#8a5200;
+  background:#fff4e0;
+}
+
+/* Marca visual de error en tarjetas */
+.ring-error{
+  box-shadow:0 0 0 3px rgba(239,68,68,.25);
+  border-color:#fecaca !important;
+}
+
+/* ===========================
+   Responsivo
+   =========================== */
+@media (min-width: 1100px){
+  .container{
+    grid-template-columns: 260px 1fr; /* sidebar + contenido */
+  }
+}
+@media (max-width: 1024px){
+  .container{ grid-template-columns: 1fr }
+  .sidebar{ display:none }
+  .header{ position:static }
+  .table{ min-width:760px }
+}
+@media (max-width:768px){
+  .glass-card{ padding:1rem }
+  .header{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:.6rem;
+  }
+  .table{ min-width:680px }
+}
